@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "external-agents-eval"
+version = "0.2.0"
+description = "Reproducible multi-benchmark evaluation harness for external coding agents"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "datasets>=3.0",
+  "docker>=7.0",
+]
+
+[project.optional-dependencies]
+deepswe = [
+  "datacurve-pier==0.3.1",
+]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.9",
+]
+
+[project.scripts]
+external-agents-eval = "external_agents_eval.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["external_agents_eval"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

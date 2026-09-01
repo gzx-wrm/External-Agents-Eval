@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+# TypeScript output is architecture-independent. Build it natively once; only the
+# installer/final runtime needs to match each target task image.
+FROM --platform=$BUILDPLATFORM node:22.19.0-bookworm-slim AS builder
+
+ARG PI_REF=v0.84.2
+ARG PI_COMMIT=914cf1472e715297caa30db4b9535d534a9eb718
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch "${PI_REF}" https://github.com/earendil-works/pi.git /src/pi \
+    && test "$(git -C /src/pi rev-parse HEAD)" = "${PI_COMMIT}"
+WORKDIR /src/pi
+RUN npm ci --ignore-scripts
+# Release source intentionally omits generated provider catalogs. The upstream
+# online build hydrates those catalogs first, then performs the same offline compile.
+RUN npm run build
+RUN mkdir -p /artifacts \
+    && npm pack --workspace @earendil-works/pi-coding-agent --pack-destination /artifacts
+
+FROM node:22.19.0-bookworm-slim AS installer
+COPY --from=builder /artifacts/*.tgz /tmp/pi-coding-agent.tgz
+RUN mkdir -p /opt/pi-runtime/bin \
+    && cp /usr/local/bin/node /opt/pi-runtime/bin/node \
+    && npm install --prefix /opt/pi-runtime --ignore-scripts /tmp/pi-coding-agent.tgz \
+    && rm /tmp/pi-coding-agent.tgz \
+    && /opt/pi-runtime/bin/node \
+       /opt/pi-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js \
+       --version
+
+FROM scratch
+COPY --from=installer /opt/pi-runtime /opt/pi-runtime
+ENTRYPOINT ["/opt/pi-runtime/bin/node"]
+CMD ["/opt/pi-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js", "--version"]

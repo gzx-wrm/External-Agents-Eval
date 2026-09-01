@@ -1,0 +1,12 @@
+.DS_Store
+.idea/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+.venv/
+.venv-deepswe/
+.benchmarks/
+.runtime_cache/
+results/
+results_*/

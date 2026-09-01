@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
+
+ARG HERMES_REF=v2026.8.18
+ARG HERMES_COMMIT=e624e9fde561e1add9388384012b295fde669ade
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch "${HERMES_REF}" \
+      https://github.com/NousResearch/hermes-agent.git /opt/hermes/source \
+    && test "$(git -C /opt/hermes/source rev-parse HEAD)" = "${HERMES_COMMIT}"
+RUN UV_PYTHON_INSTALL_DIR=/opt/hermes/python uv python install 3.11 \
+    && PYTHON_BIN="$(find /opt/hermes/python -type f -path '*/bin/python3.11' | head -n 1)" \
+    && test -n "${PYTHON_BIN}" \
+    && uv venv --python "${PYTHON_BIN}" --relocatable /opt/hermes/venv
+WORKDIR /opt/hermes/source
+ENV UV_PROJECT_ENVIRONMENT=/opt/hermes/venv
+RUN uv sync --locked --no-dev
+COPY external_agents_eval/agents/hermes_entry.py /opt/hermes/entry.py
+RUN /opt/hermes/venv/bin/python -m compileall -q /opt/hermes/entry.py /opt/hermes/source \
+    && /opt/hermes/venv/bin/python -c "from run_agent import AIAgent; print('Hermes import OK')"
+
+FROM scratch
+COPY --from=builder /opt/hermes /opt/hermes
+ENTRYPOINT ["/opt/hermes/venv/bin/python"]
+CMD ["/opt/hermes/entry.py", "--help"]
