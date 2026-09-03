@@ -1,15 +1,16 @@
 # External Agents Eval
 
 This repository evaluates pinned external coding agents through benchmark-specific
-backends. Pi Agent and Hermes Agent are currently supported on SWE-bench and DeepSWE
-v1.1.
+backends. Pi Agent and Hermes Agent are supported on SWE-bench and DeepSWE v1.1;
+Pier-native Codex is additionally supported on DeepSWE v1.1.
 
-| Agent | Pinned version | Commit | Runtime |
-|---|---|---|---|
-| [Pi Agent](https://github.com/earendil-works/pi) | `v0.84.2` | `914cf1472e715297caa30db4b9535d534a9eb718` | Node 22.19 |
-| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | `v2026.8.18` | `e624e9fde561e1add9388384012b295fde669ade` | Python 3.11 |
+| Agent | Benchmark scope | Pinned version | Commit | Runtime |
+|---|---|---|---|---|
+| [Pi Agent](https://github.com/earendil-works/pi) | SWE-bench, DeepSWE | `v0.84.2` | `914cf1472e715297caa30db4b9535d534a9eb718` | Node 22.19 |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | SWE-bench, DeepSWE | `v2026.8.18` | `e624e9fde561e1add9388384012b295fde669ade` | Python 3.11 |
+| [Codex CLI](https://github.com/openai/codex) | DeepSWE | `0.152.0` | — | Pier-installed Node 22 |
 
-Both use the direct DeepSeek provider and default to `deepseek-v4-flash`. The API key is
+All agents use the direct DeepSeek provider and default to `deepseek-v4-flash`. The API key is
 passed only as an environment variable; it is never written into an image, manifest, or
 generated command record.
 
@@ -67,7 +68,7 @@ external-agents-eval deepswe prepare \
   --sample-seed 20260901
 ```
 
-Run both agents against that same immutable manifest. Start locally with one worker:
+Run the agents against that same immutable manifest. Start locally with one worker:
 
 ```bash
 scripts/run_with_deepseek_key.sh \
@@ -80,17 +81,28 @@ scripts/run_with_deepseek_key.sh \
   --agent hermes \
   --num-workers 1 \
   --max-turns 10
+
+scripts/run_with_deepseek_key.sh \
+  external-agents-eval deepswe run \
+  --agent codex \
+  --num-workers 1
 ```
+
+The Codex path uses Pier 0.3.1's built-in `codex` agent and pins
+`@openai/codex@0.152.0`. Its checked-in TOML selects DeepSeek's native Responses API
+and reads `DEEPSEEK_API_KEY` from the environment; no Codex-specific adapter or API
+proxy is used.
 
 Use `--dry-run` to inspect the exact Pier command and selected IDs without starting a
 job. For an AMD64 Linux or configured Modal environment, increase concurrency as
 resources permit; Modal can be selected with `--environment modal`.
 
 DeepSWE v1.1 runs the agent in `/app` without task-test access. Runtime egress is filtered
-to `api.deepseek.com` only. After each successful agent process, the plugin stages and
-commits all repository changes because the separate verifier grades only
-`base_commit..HEAD`. The full binary patch is preserved; SWE-bench's test-diff filter is
-not applied.
+to `api.deepseek.com` only. The Pi/Hermes plugins stage and commit all repository changes;
+all 60 selected task instructions also explicitly require Codex to commit. This matters
+because the separate verifier grades only `base_commit..HEAD`. Confirm that `HEAD`
+advances in a one-task Codex smoke run before starting all 60 tasks. The full binary patch
+is preserved; SWE-bench's test-diff filter is not applied.
 
 Pier writes trials under `results/deepswe/<job-name>/`. Aggregate the official reward
 records with:
@@ -147,7 +159,7 @@ Pier's official job/trial layout, including:
 <trial>/
   agent/
     trajectory.json          # ATIF-v1.7
-    pi.jsonl | hermes-output.json
+    pi.jsonl | hermes-output.json | codex.txt
   verifier/
     reward.json
     ctrf.json

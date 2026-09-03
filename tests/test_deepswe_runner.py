@@ -1,7 +1,12 @@
 import asyncio
+import json
 from pathlib import Path
 
 from external_agents_eval.benchmarks.deepswe import runner
+from external_agents_eval.benchmarks.deepswe.config import (
+    CODEX_CONFIG_FILE,
+    CODEX_VERSION,
+)
 from external_agents_eval.benchmarks.deepswe.manifest import DeepSWEManifest
 from external_agents_eval.benchmarks.deepswe.pier_compat import (
     DEEPSWE_BUILDER_ENV,
@@ -40,6 +45,7 @@ def test_pier_command_uses_exact_manifest_and_secret_template(tmp_path):
         job_name="fixed-pi",
     )
     assert "external_agents_eval.agents.pier.pi:PiPierAgent" in command
+    assert "--agent" not in command
     assert "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}" in command
     assert command.count("--include-task-name") == 2
     assert command[-4:] == [
@@ -49,6 +55,58 @@ def test_pier_command_uses_exact_manifest_and_secret_template(tmp_path):
         "task-a",
     ]
     assert "--sample-seed" not in command
+
+
+def test_codex_command_uses_pier_native_agent_and_secret_safe_config(tmp_path):
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="codex",
+        jobs_dir=Path("/jobs"),
+        job_name="fixed-codex",
+    )
+
+    agent_index = command.index("--agent")
+    assert command[agent_index + 1] == "codex"
+    assert "--agent-import-path" not in command
+    assert f"version={CODEX_VERSION}" in command
+    assert f"config_toml_file={CODEX_CONFIG_FILE.resolve()}" in command
+    assert "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}" in command
+
+    config = CODEX_CONFIG_FILE.read_text(encoding="utf-8")
+    assert 'web_search = "disabled"' in config
+    assert 'base_url = "https://api.deepseek.com/"' in config
+    assert 'wire_api = "responses"' in config
+    assert 'env_key = "DEEPSEEK_API_KEY"' in config
+    assert "experimental_bearer_token" not in config
+
+
+def test_codex_dry_run_records_pier_and_provider_metadata(tmp_path, monkeypatch, capsys):
+    checkout = tmp_path / "checkout"
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+
+    runner.run_pier(
+        checkout=checkout,
+        manifest=_manifest(tmp_path),
+        agent_id="codex",
+        jobs_dir=tmp_path / "jobs",
+        environment="modal",
+        dry_run=True,
+    )
+
+    metadata = json.loads(capsys.readouterr().out)
+    assert metadata["agent"] == "codex"
+    assert metadata["agent_version"] == CODEX_VERSION
+    assert metadata["agent_implementation"] == "pier-native"
+    assert metadata["model_provider"] == "deepseek"
+    assert metadata["model_provider_base_url"] == "https://api.deepseek.com/"
+    assert metadata["model_provider_wire_api"] == "responses"
+    assert "agent_upstream_commit" not in metadata
 
 
 def test_hermes_command_carries_turn_limit(tmp_path):
@@ -136,6 +194,83 @@ def test_builder_name_is_stable_and_job_scoped(tmp_path):
     assert first == _docker_builder_name(tmp_path, "job-a")
     assert first != _docker_builder_name(tmp_path, "job-b")
     assert first.startswith("external-eval-deepswe-")
+
+
+def test_builder_inherits_container_reachable_docker_desktop_proxy(monkeypatch):
+    docker_info = {
+        "HttpProxy": "http.docker.internal:3128",
+        "HttpsProxy": "http.docker.internal:3128",
+        "NoProxy": "hubproxy.docker.internal",
+    }
+
+    def fake_run(command, **_kwargs):
+        assert command == ["docker", "info", "--format", "{{json .}}"]
+        return runner.subprocess.CompletedProcess(
+            command,
+            returncode=0,
+            stdout=json.dumps(docker_info),
+        )
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+
+    assert runner._docker_desktop_proxy_driver_options() == [
+        "--driver-opt",
+        "env.http_proxy=http://http.docker.internal:3128",
+        "--driver-opt",
+        "env.https_proxy=http://http.docker.internal:3128",
+        "--driver-opt",
+        "env.no_proxy=hubproxy.docker.internal",
+    ]
+
+
+def test_builder_does_not_forward_unreachable_or_credentialed_proxy(monkeypatch):
+    docker_info = {
+        "HttpProxy": "http://127.0.0.1:7890",
+        "HttpsProxy": "http://user:secret@http.docker.internal:3128",
+        "NoProxy": "localhost",
+    }
+    result = runner.subprocess.CompletedProcess(
+        ["docker", "info"],
+        returncode=0,
+        stdout=json.dumps(docker_info),
+    )
+    monkeypatch.setattr(runner.subprocess, "run", lambda *_args, **_kwargs: result)
+
+    assert runner._docker_desktop_proxy_driver_options() == []
+
+
+def test_builder_creation_adds_detected_proxy_options(monkeypatch):
+    calls = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return_code = 1 if command[:3] == ["docker", "buildx", "inspect"] else 0
+        return runner.subprocess.CompletedProcess(command, returncode=return_code)
+
+    proxy_options = [
+        "--driver-opt",
+        "env.https_proxy=http://http.docker.internal:3128",
+    ]
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        runner,
+        "_docker_desktop_proxy_driver_options",
+        lambda: proxy_options,
+    )
+
+    runner._create_dedicated_builder("dedicated-builder")
+
+    assert calls[-1] == [
+        "docker",
+        "buildx",
+        "create",
+        "--name",
+        "dedicated-builder",
+        "--driver",
+        "docker-container",
+        *proxy_options,
+        "--bootstrap",
+    ]
 
 
 def test_pier_process_waits_for_cleanup_after_keyboard_interrupt(monkeypatch):

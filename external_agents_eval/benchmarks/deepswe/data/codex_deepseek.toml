@@ -1,0 +1,10 @@
+model_provider = "deepseek"
+preferred_auth_method = "apikey"
+forced_login_method = "api"
+web_search = "disabled"
+
+[model_providers.deepseek]
+name = "DeepSeek"
+base_url = "https://api.deepseek.com/"
+wire_api = "responses"
+env_key = "DEEPSEEK_API_KEY"

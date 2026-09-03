@@ -9,8 +9,17 @@ import subprocess
 import sys
 import warnings
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from external_agents_eval.agents.config import AGENTS, DEFAULT_MODEL
+from external_agents_eval.benchmarks.deepswe.config import (
+    CODEX_CONFIG_FILE,
+    CODEX_MODEL_PROVIDER,
+    CODEX_PROVIDER_BASE_URL,
+    CODEX_VERSION,
+    CODEX_WIRE_API,
+    DEEPSWE_AGENTS,
+)
 from external_agents_eval.benchmarks.deepswe.manifest import (
     DeepSWEManifest,
     validate_manifest_against_checkout,
@@ -56,7 +65,7 @@ def build_pier_command(
     max_turns: int = 10,
     environment: str = "docker",
 ) -> list[str]:
-    if agent_id not in AGENT_IMPORT_PATHS:
+    if agent_id not in DEEPSWE_AGENTS:
         raise ValueError(f"Unsupported DeepSWE agent: {agent_id}")
     if num_workers <= 0 or attempts <= 0 or max_turns <= 0:
         raise ValueError("num_workers, attempts, and max_turns must be positive")
@@ -67,24 +76,39 @@ def build_pier_command(
         "run",
         "--path",
         str(checkout / "tasks"),
-        "--agent-import-path",
-        AGENT_IMPORT_PATHS[agent_id],
-        "--model",
-        model,
-        "--agent-env",
-        "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}",
-        "--jobs-dir",
-        str(jobs_dir),
-        "--job-name",
-        job_name,
-        "--n-concurrent",
-        str(num_workers),
-        "--n-attempts",
-        str(attempts),
-        "--env",
-        environment,
-        "--yes",
     ]
+    if agent_id == "codex":
+        command.extend(["--agent", "codex"])
+    else:
+        command.extend(["--agent-import-path", AGENT_IMPORT_PATHS[agent_id]])
+    command.extend(
+        [
+            "--model",
+            model,
+            "--agent-env",
+            "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}",
+            "--jobs-dir",
+            str(jobs_dir),
+            "--job-name",
+            job_name,
+            "--n-concurrent",
+            str(num_workers),
+            "--n-attempts",
+            str(attempts),
+            "--env",
+            environment,
+            "--yes",
+        ]
+    )
+    if agent_id == "codex":
+        command.extend(
+            [
+                "--agent-kwarg",
+                f"version={CODEX_VERSION}",
+                "--agent-kwarg",
+                f"config_toml_file={CODEX_CONFIG_FILE.resolve()}",
+            ]
+        )
     if agent_id == "hermes":
         command.extend(["--agent-kwarg", f"max_turns={max_turns}"])
     for task_id in manifest.task_ids:
@@ -104,6 +128,60 @@ def _docker_builder_name(jobs_dir: Path, job_name: str) -> str:
     return f"{DOCKER_BUILDER_PREFIX}-{digest}"
 
 
+def _docker_desktop_proxy_driver_options() -> list[str]:
+    """Forward Docker Desktop's container-reachable proxy to BuildKit.
+
+    Docker Desktop applies its proxy to daemon image pulls, but a BuildKit
+    container created with the ``docker-container`` driver does not inherit
+    that proxy.  In proxy/Fake-IP setups this makes the daemon pull succeed
+    while BuildKit times out fetching registry auth tokens.
+
+    Only ``*.docker.internal`` endpoints are forwarded.  Loopback proxies are
+    not reachable from the builder container, and credential-bearing proxy
+    URLs must not be copied into command-line arguments.
+    """
+    result = subprocess.run(
+        ["docker", "info", "--format", "{{json .}}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return []
+    try:
+        docker_info = json.loads(result.stdout)
+    except (json.JSONDecodeError, TypeError):
+        warnings.warn(
+            "Could not parse Docker info while detecting the Docker Desktop proxy",
+            stacklevel=2,
+        )
+        return []
+
+    options: list[str] = []
+    for info_key, environment_key in (
+        ("HttpProxy", "http_proxy"),
+        ("HttpsProxy", "https_proxy"),
+    ):
+        value = docker_info.get(info_key)
+        if not isinstance(value, str) or not value.strip():
+            continue
+        normalized = value.strip()
+        if "://" not in normalized:
+            normalized = f"http://{normalized}"
+        parsed = urlsplit(normalized)
+        if parsed.username or parsed.password:
+            continue
+        hostname = (parsed.hostname or "").lower()
+        if not hostname.endswith(".docker.internal"):
+            continue
+        options.extend(["--driver-opt", f"env.{environment_key}={normalized}"])
+
+    no_proxy = docker_info.get("NoProxy")
+    if options and isinstance(no_proxy, str) and no_proxy.strip():
+        options.extend(["--driver-opt", f"env.no_proxy={no_proxy.strip()}"])
+    return options
+
+
 def _create_dedicated_builder(builder_name: str) -> None:
     """Create a BuildKit instance used only by one DeepSWE job."""
     inspect = subprocess.run(
@@ -120,19 +198,18 @@ def _create_dedicated_builder(builder_name: str) -> None:
             ["docker", "buildx", "rm", "--force", builder_name],
             check=True,
         )
-    subprocess.run(
-        [
-            "docker",
-            "buildx",
-            "create",
-            "--name",
-            builder_name,
-            "--driver",
-            "docker-container",
-            "--bootstrap",
-        ],
-        check=True,
-    )
+    create_command = [
+        "docker",
+        "buildx",
+        "create",
+        "--name",
+        builder_name,
+        "--driver",
+        "docker-container",
+    ]
+    create_command.extend(_docker_desktop_proxy_driver_options())
+    create_command.append("--bootstrap")
+    subprocess.run(create_command, check=True)
 
 
 def _remove_dedicated_builder(builder_name: str) -> None:
@@ -195,7 +272,7 @@ def run_pier(
     environment: str = "docker",
     dry_run: bool = False,
 ) -> Path:
-    if agent_id not in AGENTS:
+    if agent_id not in DEEPSWE_AGENTS:
         raise ValueError(f"Unsupported agent: {agent_id}")
     if not os.environ.get("DEEPSEEK_API_KEY") and not dry_run:
         raise RuntimeError("DEEPSEEK_API_KEY is not set. Use scripts/run_with_deepseek_key.sh.")
@@ -230,7 +307,6 @@ def run_pier(
         "benchmark": "deepswe",
         "benchmark_revision": "1.1",
         "agent": agent_id,
-        "agent_upstream_commit": AGENTS[agent_id].upstream_commit,
         "model": model,
         "environment": environment,
         "manifest": str(manifest.path),
@@ -243,6 +319,18 @@ def run_pier(
         ),
         "command": command,
     }
+    if agent_id == "codex":
+        metadata.update(
+            {
+                "agent_version": CODEX_VERSION,
+                "agent_implementation": "pier-native",
+                "model_provider": CODEX_MODEL_PROVIDER,
+                "model_provider_base_url": CODEX_PROVIDER_BASE_URL,
+                "model_provider_wire_api": CODEX_WIRE_API,
+            }
+        )
+    else:
+        metadata["agent_upstream_commit"] = AGENTS[agent_id].upstream_commit
     if dry_run:
         print(json.dumps(metadata, indent=2, ensure_ascii=False))
         return job_dir

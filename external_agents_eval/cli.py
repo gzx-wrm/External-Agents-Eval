@@ -8,6 +8,11 @@ from pathlib import Path
 from external_agents_eval.agents.config import AGENTS, DEFAULT_MODEL
 from external_agents_eval.agents.runtime_build import RUNTIME_PLATFORMS, build_runtime_images
 from external_agents_eval.benchmarks.deepswe.config import (
+    DEEPSWE_AGENTS,
+    DEFAULT_SAMPLE_SEED,
+    DEFAULT_SAMPLE_SIZE,
+)
+from external_agents_eval.benchmarks.deepswe.config import (
     DEFAULT_CHECKOUT_DIR as DEFAULT_DEEPSWE_CHECKOUT,
 )
 from external_agents_eval.benchmarks.deepswe.config import (
@@ -15,10 +20,6 @@ from external_agents_eval.benchmarks.deepswe.config import (
 )
 from external_agents_eval.benchmarks.deepswe.config import (
     DEFAULT_MANIFEST as DEFAULT_DEEPSWE_MANIFEST,
-)
-from external_agents_eval.benchmarks.deepswe.config import (
-    DEFAULT_SAMPLE_SEED,
-    DEFAULT_SAMPLE_SIZE,
 )
 from external_agents_eval.benchmarks.deepswe.manifest import (
     build_manifest_payload,
@@ -137,7 +138,7 @@ def build_parser() -> argparse.ArgumentParser:
     deep_run = deepswe_commands.add_parser(
         "run", help="Run the fixed manifest through official Pier"
     )
-    deep_run.add_argument("--agent", choices=AGENTS, required=True)
+    deep_run.add_argument("--agent", choices=DEEPSWE_AGENTS, required=True)
     deep_run.add_argument("--checkout-dir", type=Path, default=DEFAULT_DEEPSWE_CHECKOUT)
     deep_run.add_argument("--manifest", type=Path, default=DEFAULT_DEEPSWE_MANIFEST)
     deep_run.add_argument("--jobs-dir", type=Path, default=DEFAULT_DEEPSWE_JOBS)
