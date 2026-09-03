@@ -6,6 +6,18 @@ import os
 import sys
 from pathlib import Path
 
+PRACTICALLY_UNLIMITED_MAX_ITERATIONS = 2_147_483_647
+
+
+def resolve_max_iterations(value: int | str | None) -> int:
+    """Map an omitted evaluation limit to a safe integer Hermes accepts."""
+    if value is None:
+        return PRACTICALLY_UNLIMITED_MAX_ITERATIONS
+    parsed = int(value)
+    if parsed <= 0:
+        raise ValueError("max_turns must be positive when provided")
+    return parsed
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
@@ -31,7 +43,7 @@ def main() -> int:
         base_url=payload["base_url"],
         api_key=api_key,
         model=payload["model"],
-        max_iterations=int(payload.get("max_turns", 10)),
+        max_iterations=resolve_max_iterations(payload.get("max_turns")),
         enabled_toolsets=["terminal", "file"],
         save_trajectories=False,
         verbose_logging=False,

@@ -62,13 +62,15 @@ def build_pier_command(
     model: str = DEFAULT_MODEL,
     num_workers: int = 1,
     attempts: int = 1,
-    max_turns: int = 10,
+    max_turns: int | None = None,
     environment: str = "docker",
 ) -> list[str]:
     if agent_id not in DEEPSWE_AGENTS:
         raise ValueError(f"Unsupported DeepSWE agent: {agent_id}")
-    if num_workers <= 0 or attempts <= 0 or max_turns <= 0:
-        raise ValueError("num_workers, attempts, and max_turns must be positive")
+    if num_workers <= 0 or attempts <= 0:
+        raise ValueError("num_workers and attempts must be positive")
+    if max_turns is not None and max_turns <= 0:
+        raise ValueError("max_turns must be positive when provided")
     if environment not in {"docker", "modal"}:
         raise ValueError(f"Unsupported Pier environment: {environment}")
     command = [
@@ -109,7 +111,7 @@ def build_pier_command(
                 f"config_toml_file={CODEX_CONFIG_FILE.resolve()}",
             ]
         )
-    if agent_id == "hermes":
+    if agent_id == "hermes" and max_turns is not None:
         command.extend(["--agent-kwarg", f"max_turns={max_turns}"])
     for task_id in manifest.task_ids:
         command.extend(["--include-task-name", task_id])
@@ -267,7 +269,7 @@ def run_pier(
     model: str = DEFAULT_MODEL,
     num_workers: int = 1,
     attempts: int = 1,
-    max_turns: int = 10,
+    max_turns: int | None = None,
     pier_executable: str = "pier",
     environment: str = "docker",
     dry_run: bool = False,
@@ -309,6 +311,11 @@ def run_pier(
         "agent": agent_id,
         "model": model,
         "environment": environment,
+        "max_turns": max_turns if agent_id == "hermes" else None,
+        "turn_limit_policy": (
+            "agent-max-turns" if agent_id == "hermes" and max_turns is not None
+            else "task-timeout-only"
+        ),
         "manifest": str(manifest.path),
         "task_ids": list(manifest.task_ids),
         "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),

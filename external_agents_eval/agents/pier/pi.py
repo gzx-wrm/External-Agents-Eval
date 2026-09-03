@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 
 from pier.environments.base import BaseEnvironment
 from pier.models.agent.context import AgentContext
@@ -20,7 +21,7 @@ def _build_pi_command(*, model: str, prompt_path: str) -> str:
         f"/opt/pi-runtime/bin/node {cli} "
         "--mode json --no-session --no-approve --provider deepseek "
         f"--model {model} --tools {tools} "
-        f'-p "$(cat {prompt_path})"'
+        f"-p < {shlex.quote(prompt_path)}"
     )
 
 
@@ -56,8 +57,9 @@ fi
 set -eu
 export NVM_DIR=/opt/pi-runtime/nvm
 mkdir -p "$NVM_DIR" /opt/pi-runtime/bin
-curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
-. "$NVM_DIR/nvm.sh"
+curl --retry 5 --retry-all-errors --retry-delay 2 -fsSL \
+  https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
+. "$NVM_DIR/nvm.sh" --no-use
 nvm install {self._NODE_VERSION}
 nvm use {self._NODE_VERSION}
 ln -sf "$(command -v node)" /opt/pi-runtime/bin/node

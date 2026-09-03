@@ -79,14 +79,19 @@ scripts/run_with_deepseek_key.sh \
 scripts/run_with_deepseek_key.sh \
   external-agents-eval deepswe run \
   --agent hermes \
-  --num-workers 1 \
-  --max-turns 10
+  --num-workers 1
 
 scripts/run_with_deepseek_key.sh \
   external-agents-eval deepswe run \
   --agent codex \
   --num-workers 1
 ```
+
+DeepSWE does not impose an evaluation-side Hermes turn limit unless `--max-turns` is
+provided explicitly. When it is omitted, the adapter supplies Hermes with a practically
+unreachable integer iteration limit and Pier's per-task timeout remains the effective
+stop condition. The adapter also leaves the model's maximum output tokens unspecified,
+so the native Hermes/DeepSeek default applies.
 
 The Codex path uses Pier 0.3.1's built-in `codex` agent and pins
 `@openai/codex@0.152.0`. Its checked-in TOML selects DeepSeek's native Responses API

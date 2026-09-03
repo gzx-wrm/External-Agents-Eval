@@ -146,7 +146,15 @@ def build_parser() -> argparse.ArgumentParser:
     deep_run.add_argument("--model", default=DEFAULT_MODEL)
     deep_run.add_argument("--num-workers", type=int, default=1)
     deep_run.add_argument("--attempts", type=int, default=1)
-    deep_run.add_argument("--max-turns", type=int, default=10)
+    deep_run.add_argument(
+        "--max-turns",
+        type=int,
+        default=None,
+        help=(
+            "Optional Hermes turn limit; when omitted, the agent is limited only "
+            "by the benchmark task timeout"
+        ),
+    )
     deep_run.add_argument("--environment", choices=["docker", "modal"], default="docker")
     deep_run.add_argument("--pier-executable", default="pier")
     deep_run.add_argument("--dry-run", action="store_true")

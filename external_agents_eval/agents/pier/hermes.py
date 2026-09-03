@@ -14,12 +14,12 @@ from external_agents_eval.agents.pier.trajectory import hermes_json_to_atif
 
 class HermesPierAgent(DeepSWEPierAgent):
     spec = get_agent_spec("hermes")
-    _UV_VERSION = "0.8.14"
+    _UV_VERSION = "0.9.28"
 
-    def __init__(self, *args, max_turns: int = 10, **kwargs) -> None:
+    def __init__(self, *args, max_turns: int | None = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        if max_turns <= 0:
-            raise ValueError("max_turns must be positive")
+        if max_turns is not None and max_turns <= 0:
+            raise ValueError("max_turns must be positive when provided")
         self.max_turns = max_turns
 
     @staticmethod
@@ -49,14 +49,16 @@ fi
         install = f"""
 set -eu
 curl -LsSf https://astral.sh/uv/{self._UV_VERSION}/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
+uv_bin=/usr/local/bin/uv
+test "$("$uv_bin" --version | cut -d' ' -f2)" = "{self._UV_VERSION}"
 git clone --depth 1 --branch {self.spec.upstream_ref} {self.spec.upstream_url}.git /opt/hermes/source
 test "$(git -C /opt/hermes/source rev-parse HEAD)" = "{self.spec.upstream_commit}"
-UV_PYTHON_INSTALL_DIR=/opt/hermes/python uv python install 3.11
+UV_PYTHON_INSTALL_DIR=/opt/hermes/python "$uv_bin" python install 3.11
 python_bin="$(find /opt/hermes/python -type f -path '*/bin/python3.11' | head -n 1)"
 test -n "$python_bin"
-uv venv --python "$python_bin" --relocatable /opt/hermes/venv
+"$uv_bin" venv --python "$python_bin" --relocatable /opt/hermes/venv
 cd /opt/hermes/source
-UV_PROJECT_ENVIRONMENT=/opt/hermes/venv uv sync --locked --no-dev
+UV_PROJECT_ENVIRONMENT=/opt/hermes/venv "$uv_bin" sync --locked --no-dev
 """.strip()
         return AgentInstallSpec(
             agent_name=self.name(),
@@ -157,6 +159,9 @@ UV_PROJECT_ENVIRONMENT=/opt/hermes/venv uv sync --locked --no-dev
             "provider": "deepseek",
             "model": self.runtime_model,
             "max_turns": self.max_turns,
+            "turn_limit_policy": (
+                "agent-max-turns" if self.max_turns is not None else "task-timeout-only"
+            ),
             "api_calls": output_payload.get("api_calls"),
             "process_exit_code": result.return_code,
         }

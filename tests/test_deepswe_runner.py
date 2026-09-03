@@ -123,6 +123,19 @@ def test_hermes_command_carries_turn_limit(tmp_path):
     assert command[index + 1] == "max_turns=12"
 
 
+def test_hermes_command_omits_turn_limit_by_default(tmp_path):
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="hermes",
+        jobs_dir=Path("/jobs"),
+        job_name="fixed-hermes",
+    )
+    assert "--agent-kwarg" not in command
+    assert not any(argument.startswith("max_turns=") for argument in command)
+
+
 def test_pier_resolves_next_to_active_python_when_not_on_path(tmp_path, monkeypatch):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
