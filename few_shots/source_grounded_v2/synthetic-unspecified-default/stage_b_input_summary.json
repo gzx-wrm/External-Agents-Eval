@@ -1,0 +1,7 @@
+{
+  "task_id": "synthetic-unspecified-default",
+  "example_scope": "Continuous Stage B example assessing the exact stage_a_output.json ledger.",
+  "p0_summary": "P0 accepts retry_delay, propagates explicit values to the scheduler, preserves the frozen 100ms fallback, and keeps Client.retry_delay readable.",
+  "public_validation": "The focused explicit-delay and omitted-delay tests both passed through the public Client API.",
+  "review_focus": "Show covered records with both kinds of valid evidence, a resolved nonbinding unspecified detail, and an approve route."
+}

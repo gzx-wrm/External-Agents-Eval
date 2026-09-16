@@ -1,0 +1,13 @@
+{
+  "task_id": "synthetic-all-public-types",
+  "example_scope": "Independent counterfactual Stage B example. It reuses the IDs and sources for validation but audits a deliberately weakened/overstated frozen ledger rather than the correct stage_a_output.json statements.",
+  "counterfactual_ledger": {
+    "O01.C01": "Only Circle is required to be in the public registry; Loop may remain unsupported.",
+    "O02.C01": "Circle and Loop each encode and decode successfully.",
+    "O02.C02": "A successful round trip preserves the public fields.",
+    "O03.C01": "Unknown non-public tags remain rejected.",
+    "O04.C01": "Circle must use tag 1 and Loop must use tag 2."
+  },
+  "p0_summary": "Circle round-trips, Loop is rejected, one branch drops Loop.points ordering, the unknown-tag behavior cannot be executed because an optional codec dependency is unavailable, and P0 also rejects documented version-1 envelopes.",
+  "review_focus": "Show replacement of a weakened criterion, partial/missing/uncertain/not_applicable statuses, failed and not-run test records, an additional source, a blocking regression, and ordered fix/investigate requests."
+}

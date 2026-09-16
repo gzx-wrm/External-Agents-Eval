@@ -1,0 +1,14 @@
+{
+  "task_id": "synthetic-policy-boundary",
+  "example_scope": "Independent counterfactual Repair example, not a continuation of the abstain assessment above.",
+  "counterfactual_request": {
+    "id": "Q01",
+    "finding_refs": ["O01"],
+    "action": "investigate",
+    "problem": "The Reviewer could not determine whether strict is exposed through the existing text entry point.",
+    "required_outcome": "Confirm the public signature and change it only if strict is absent.",
+    "preserve": ["Valid non-strict calls retain their existing result."],
+    "validation": ["Inspect the public signature and invoke both omitted and explicit strict forms."]
+  },
+  "expected_behavior": "Focused inspection confirms the candidate already exposes strict, so retain the candidate unchanged and record the evidence."
+}

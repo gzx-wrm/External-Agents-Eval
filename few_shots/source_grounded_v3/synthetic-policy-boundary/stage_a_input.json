@@ -1,0 +1,14 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-policy-boundary",
+  "task": {
+    "title": "Strict configuration parsing",
+    "description": "Add a strict argument to parse_config. When strict is true, reject unknown keys. Preserve the existing result for valid mappings. The task does not define whether duplicate keys are unknown."
+  },
+  "repository": {
+    "name": "synthetic/config-parser",
+    "base_commit": "3333333333333333333333333333333333333333",
+    "worktree": "/synthetic/config-parser",
+    "state": "base_only"
+  }
+}

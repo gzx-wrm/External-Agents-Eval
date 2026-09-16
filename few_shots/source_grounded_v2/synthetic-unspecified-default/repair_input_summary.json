@@ -1,0 +1,7 @@
+{
+  "task_id": "synthetic-unspecified-default",
+  "example_scope": "No-op routing example only: Stage B approved, so the real Controller does not invoke Repair.",
+  "request": null,
+  "proposed_change": null,
+  "risk": "Creating a repair for the nonbinding 500ms preference would violate the approved effective review set."
+}

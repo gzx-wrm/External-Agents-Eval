@@ -14,13 +14,43 @@ from external_agents_eval.agents.pier.trajectory import pi_jsonl_to_atif
 PI_BUILTIN_TOOLS = ("read", "bash", "edit", "write", "grep", "find", "ls")
 
 
-def _build_pi_command(*, model: str, prompt_path: str) -> str:
+def _build_pi_command(
+    *,
+    model: str,
+    prompt_path: str,
+    tools: tuple[str, ...] = PI_BUILTIN_TOOLS,
+    session_id: str | None = None,
+    session_dir: str | None = None,
+    session_file: str | None = None,
+    no_compaction: bool = False,
+) -> str:
     cli = "/opt/pi-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js"
-    tools = ",".join(PI_BUILTIN_TOOLS)
+    tool_names = ",".join(tools)
+    tool_option = "--no-tools" if not tools else f"--tools {shlex.quote(tool_names)}"
+    if session_file and (session_id or session_dir):
+        raise ValueError("session_file cannot be combined with session_id/session_dir")
+    if session_file:
+        session_option = f"--session {shlex.quote(session_file)}"
+    elif session_id:
+        if not session_dir:
+            raise ValueError("session_dir is required with session_id")
+        session_option = (
+            f"--session-dir {shlex.quote(session_dir)} "
+            f"--session-id {shlex.quote(session_id)}"
+        )
+    elif session_dir:
+        raise ValueError("session_id is required with session_dir")
+    else:
+        session_option = "--no-session"
+    # Pi 0.84.2 has no ``--no-compaction`` CLI flag.  V5 callers use the
+    # option only as a signal to provision a settings file in the role
+    # environment; keeping this builder free of an unknown flag is important
+    # because Pi rejects unknown options before starting the session.
+    del no_compaction
     return (
         f"/opt/pi-runtime/bin/node {cli} "
-        "--mode json --no-session --no-approve --provider deepseek "
-        f"--model {model} --tools {tools} "
+        f"--mode json {session_option} --no-approve --provider deepseek "
+        f"--model {shlex.quote(model)} {tool_option} "
         f"-p < {shlex.quote(prompt_path)}"
     )
 

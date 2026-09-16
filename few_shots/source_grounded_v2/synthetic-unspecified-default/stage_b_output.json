@@ -1,0 +1,131 @@
+{
+  "schema_version": "2.0",
+  "task_id": "synthetic-unspecified-default",
+  "patch_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "ledger_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "additional_sources": [],
+  "criterion_assessments": [
+    {
+      "criterion_ref": "O01.C01",
+      "source_check": {
+        "status": "supported",
+        "source_refs": ["S02"],
+        "rationale": "The issue directly requires the optional argument and propagation of an explicit value.",
+        "compliant_but_rejected_example": null,
+        "satisfies_but_violates_example": "Accepting retry_delay while continuing to schedule the fallback satisfies only the API half and violates propagation."
+      },
+      "implementation_status": "covered",
+      "implementation_evidence": [
+        {
+          "path": "src/client.py",
+          "symbol": "Client.__init__",
+          "line_start": 3,
+          "line_end": 7,
+          "explanation": "P0 stores the explicit value and passes the effective delay to the retry scheduler."
+        }
+      ],
+      "test_evidence": [
+        {
+          "path": "tests/test_client.py",
+          "test_name": "test_explicit_retry_delay",
+          "command": "python -m pytest tests/test_client.py::test_explicit_retry_delay -q",
+          "result": "passed",
+          "explanation": "The public Client entry point scheduled the explicitly supplied delay."
+        }
+      ],
+      "validation_note": null,
+      "gap": null,
+      "confidence": "high"
+    },
+    {
+      "criterion_ref": "O01.C02",
+      "source_check": {
+        "status": "supported",
+        "source_refs": ["S03", "S04", "S05"],
+        "rationale": "The issue preserves the omitted-argument path and the base code/test identify its observable fallback.",
+        "compliant_but_rejected_example": null,
+        "satisfies_but_violates_example": null
+      },
+      "implementation_status": "covered",
+      "implementation_evidence": [
+        {
+          "path": "src/client.py",
+          "symbol": "Client.__init__",
+          "line_start": 3,
+          "line_end": 7,
+          "explanation": "The optional argument defaults to the unchanged DEFAULT_RETRY_DELAY path."
+        }
+      ],
+      "test_evidence": [
+        {
+          "path": "tests/test_client.py",
+          "test_name": "test_default_retry_delay",
+          "command": "python -m pytest tests/test_client.py::test_default_retry_delay -q",
+          "result": "passed",
+          "explanation": "Construction without the new argument retained the public fallback."
+        }
+      ],
+      "validation_note": null,
+      "gap": null,
+      "confidence": "high"
+    },
+    {
+      "criterion_ref": "O02.C01",
+      "source_check": {
+        "status": "supported",
+        "source_refs": ["S04", "S05"],
+        "rationale": "The frozen public attribute and test establish this non-blocking inspection contract.",
+        "compliant_but_rejected_example": null,
+        "satisfies_but_violates_example": null
+      },
+      "implementation_status": "covered",
+      "implementation_evidence": [
+        {
+          "path": "src/client.py",
+          "symbol": "Client.retry_delay",
+          "line_start": null,
+          "line_end": null,
+          "explanation": "Inspection of the public attribute shows that it exposes the selected effective delay."
+        }
+      ],
+      "test_evidence": [],
+      "validation_note": "A read-only public-entry-point probe constructed explicit and default Clients and observed 0.25 and 0.1 respectively; no repository file was created.",
+      "gap": null,
+      "confidence": "medium"
+    },
+    {
+      "criterion_ref": "O02.C02",
+      "source_check": {
+        "status": "underdetermined",
+        "source_refs": ["S02", "S03", "S04"],
+        "rationale": "The sources preserve a fallback but do not authorize the proposed 500ms value; the base currently uses 100ms.",
+        "compliant_but_rejected_example": "Preserving the public 100ms fallback complies with the task but would be rejected by the invented 500ms statement.",
+        "satisfies_but_violates_example": null
+      },
+      "implementation_status": "not_applicable",
+      "implementation_evidence": [],
+      "test_evidence": [],
+      "validation_note": null,
+      "gap": null,
+      "confidence": "high"
+    }
+  ],
+  "ledger_challenges": [
+    {
+      "id": "D01",
+      "criterion_ref": "O02.C02",
+      "kind": "unresolved_meaning",
+      "source_refs": ["S02", "S03", "S04"],
+      "explanation": "The exact 500ms detail is not a binding acceptance requirement.",
+      "alternative_interpretations": ["Preserve the frozen 100ms public fallback."],
+      "disposition": "nonbinding",
+      "replacement_refs": []
+    }
+  ],
+  "unexpected_regressions": [],
+  "late_obligation_candidates": [],
+  "verdict": "approve",
+  "verdict_rationale": "Every effective must is covered, the effective should is covered, and the only challenged detail is a resolved nonbinding numeric preference.",
+  "abstain_reason": null,
+  "repair_requests": []
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-format-codec",
+  "candidate_patch_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "assessment_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "effective_review_set_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "changed_paths": ["src/codec.py"],
+  "changes": [
+    {
+      "change_id": "C01",
+      "request_refs": ["Q01"],
+      "finding_refs": ["O02"],
+      "decision": "implement",
+      "before_behavior": "All payloads were tagged with DEFAULT_VERSION, including non-default public calls.",
+      "after_behavior": "Each payload is tagged with the format_version selected by its caller.",
+      "preserve": [
+        "Calls that omit format_version still select DEFAULT_VERSION.",
+        "Default-version payloads still decode through the original entry point."
+      ],
+      "out_of_request_scope": false,
+      "scope_rationale": null,
+      "changed_paths": ["src/codec.py"],
+      "validation": [
+        {
+          "command": "python -m pytest tests/test_codec.py -k 'selected_version or default_payload_compatibility'",
+          "result": "passed",
+          "expected": "Both the selected version and the existing default path behave as specified.",
+          "actual": "Both focused public cases passed.",
+          "log_path": null
+        }
+      ]
+    }
+  ],
+  "unaddressed_requests": [],
+  "validation_summary": "The selected-version defect was repaired and both named compatibility boundaries passed."
+}

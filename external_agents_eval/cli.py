@@ -31,7 +31,14 @@ from external_agents_eval.benchmarks.deepswe.manifest import (
 from external_agents_eval.benchmarks.deepswe.manifest import (
     write_manifest as write_deepswe_manifest,
 )
-from external_agents_eval.benchmarks.deepswe.report import collect_summary
+from external_agents_eval.benchmarks.deepswe.report import (
+    collect_reviewer_experiment_summary,
+    collect_summary,
+)
+from external_agents_eval.benchmarks.deepswe.reviewer_experiment_manifest import (
+    build_reviewer_experiment_manifest,
+    load_reviewer_experiment_manifest,
+)
 from external_agents_eval.benchmarks.deepswe.runner import run_pier
 from external_agents_eval.benchmarks.swebench.config import (
     DEFAULT_MANIFEST,
@@ -135,6 +142,20 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.add_argument("--sample-size", type=int, default=DEFAULT_SAMPLE_SIZE)
     prepare.add_argument("--sample-seed", type=int, default=DEFAULT_SAMPLE_SEED)
 
+    review_prepare = deepswe_commands.add_parser(
+        "prepare-review-manifest",
+        help="Freeze an existing-P0 reviewer experiment manifest",
+    )
+    review_prepare.add_argument("--source-job-dir", type=Path, required=True)
+    review_prepare.add_argument("--checkout-dir", type=Path, default=DEFAULT_DEEPSWE_CHECKOUT)
+    review_prepare.add_argument("--output", type=Path, required=True)
+    review_prepare.add_argument(
+        "--scope",
+        choices=("near-miss16", "random60"),
+        default="near-miss16",
+        help="Freeze the original near-miss set or every task in the source random60 manifest",
+    )
+
     deep_run = deepswe_commands.add_parser(
         "run", help="Run the fixed manifest through official Pier"
     )
@@ -147,6 +168,65 @@ def build_parser() -> argparse.ArgumentParser:
     deep_run.add_argument("--num-workers", type=int, default=1)
     deep_run.add_argument("--attempts", type=int, default=1)
     deep_run.add_argument(
+        "--p0-manifest",
+        type=Path,
+        default=None,
+        help="Frozen existing-P0 manifest for the pi-review-repair workflow",
+    )
+    deep_run.add_argument(
+        "--workflow-role-timeout",
+        type=int,
+        default=None,
+        help=(
+            "Optional hard safety timeout in seconds for internal workflow roles; "
+            "V1-V4 apply it to Solver/Repair and V5 also uses it for A/I/R/S "
+            "invocations and persisted A/S stage deadlines"
+        ),
+    )
+    deep_run.add_argument(
+        "--few-shot-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Frozen, provenance-backed artifacts matching the selected review contract "
+            "(v1 reference-assisted, v2 synthetic, or v3 obligation-level synthetic)"
+        ),
+    )
+    deep_run.add_argument(
+        "--review-arm",
+        choices=("E0", "E1", "E2"),
+        default="E0",
+        help=(
+            "Reviewer control arm: E0=v1 baseline, E1=source-grounded review "
+            "(v2 by default), E2=E1 plus mandatory Repair audit"
+        ),
+    )
+    deep_run.add_argument(
+        "--review-contract-version",
+        choices=("1.0", "2.0", "3.0"),
+        default=None,
+        help=(
+            "Explicit Reviewer contract. Defaults to v1 for E0 and v2 for E1/E2; "
+            "select 3.0 to run the obligation-level V3 workflow."
+        ),
+    )
+    deep_run.add_argument(
+        "--review-prompt-version",
+        choices=("4.0",),
+        default=None,
+        help=(
+            "Optional Reviewer prompt override. Select 4.0 with contract 3.0 to run "
+            "the counterexample-first V4 Stage B prompt."
+        ),
+    )
+    deep_run.add_argument(
+        "--task-name",
+        dest="task_names",
+        action="append",
+        default=None,
+        help=("Run only this task from the active manifest; repeat for a subset rerun"),
+    )
+    deep_run.add_argument(
         "--max-turns",
         type=int,
         default=None,
@@ -156,6 +236,18 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     deep_run.add_argument("--environment", choices=["docker", "modal"], default="docker")
+    deep_run.add_argument(
+        "--trial-cpus",
+        type=int,
+        default=None,
+        help="Optional CPU limit applied to each task and separate verifier container",
+    )
+    deep_run.add_argument(
+        "--trial-memory-mb",
+        type=int,
+        default=None,
+        help="Optional memory limit in MiB applied to each task and separate verifier container",
+    )
     deep_run.add_argument("--pier-executable", default="pier")
     deep_run.add_argument("--dry-run", action="store_true")
 
@@ -166,6 +258,15 @@ def build_parser() -> argparse.ArgumentParser:
     deep_summary.add_argument("--manifest", type=Path, default=DEFAULT_DEEPSWE_MANIFEST)
     deep_summary.add_argument("--details", action="store_true")
     deep_summary.add_argument("--output", type=Path, default=None)
+
+    review_summary = deepswe_commands.add_parser(
+        "review-summary",
+        help="Summarize paired outcomes and protocol metrics for a reviewer experiment",
+    )
+    review_summary.add_argument("--job-dir", type=Path, required=True)
+    review_summary.add_argument("--p0-manifest", type=Path, required=True)
+    review_summary.add_argument("--details", action="store_true")
+    review_summary.add_argument("--output", type=Path, default=None)
 
     # Deprecated flat aliases preserve all pre-refactor commands.
     build = subparsers.add_parser(
@@ -281,12 +382,39 @@ def _run_deepswe(command: str, args: argparse.Namespace) -> int:
             pier_executable=args.pier_executable,
             environment=args.environment,
             dry_run=args.dry_run,
+            p0_manifest=args.p0_manifest,
+            workflow_timeout_sec=args.workflow_role_timeout,
+            few_shot_dir=args.few_shot_dir,
+            review_arm=args.review_arm,
+            review_contract_version=args.review_contract_version,
+            review_prompt_version=args.review_prompt_version,
+            task_ids=tuple(args.task_names) if args.task_names else None,
+            trial_cpus=args.trial_cpus,
+            trial_memory_mb=args.trial_memory_mb,
         )
         print(f"Pier job directory: {job_dir}")
+        return 0
+    if command == "prepare-review-manifest":
+        output = build_reviewer_experiment_manifest(
+            source_job_dir=args.source_job_dir,
+            checkout=args.checkout_dir,
+            output=args.output,
+            scope=args.scope,
+        )
+        print(f"Reviewer experiment manifest: {output}")
         return 0
     if command in {"summary", "status"}:
         manifest = load_deepswe_manifest(args.manifest)
         payload = collect_summary(args.job_dir, manifest)
+        if args.output is not None:
+            atomic_write_json(args.output.expanduser().resolve(), payload)
+        if not args.details:
+            payload.pop("details", None)
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return 0
+    if command == "review-summary":
+        manifest = load_reviewer_experiment_manifest(args.p0_manifest)
+        payload = collect_reviewer_experiment_summary(args.job_dir, manifest)
         if args.output is not None:
             atomic_write_json(args.output.expanduser().resolve(), payload)
         if not args.details:

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/review_obligations.schema.json",
+  "title": "ReviewObligations",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "feature_summary", "scope", "obligations"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "feature_summary": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["in_scope", "out_of_scope", "assumptions"],
+      "properties": {
+        "in_scope": {"$ref": "#/$defs/shortStrings"},
+        "out_of_scope": {"$ref": "#/$defs/shortStrings"},
+        "assumptions": {"$ref": "#/$defs/shortStrings"}
+      }
+    },
+    "obligations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/obligation"}
+    }
+  },
+  "$defs": {
+    "shortStrings": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {"type": "string", "minLength": 1, "maxLength": 1000}
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "evidence", "rationale"],
+      "properties": {
+        "type": {"enum": ["explicit_issue", "compatibility_inferred", "repository_contract"]},
+        "evidence": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "rationale": {"type": "string", "minLength": 1, "maxLength": 3000}
+      }
+    },
+    "obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "origins", "category", "criticality", "acceptance_criteria", "affected_surfaces", "dependencies", "confidence"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^O[0-9]{2}$"},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "origins": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"$ref": "#/$defs/origin"}},
+        "category": {"enum": ["public_api", "configuration", "data_flow", "core_behavior", "error_handling", "backward_compatibility", "integration", "serialization", "concurrency", "performance", "documentation"]},
+        "criticality": {"enum": ["must", "should"]},
+        "acceptance_criteria": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 2000}},
+        "affected_surfaces": {"type": "array", "maxItems": 24, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+        "dependencies": {"type": "array", "maxItems": 31, "uniqueItems": true, "items": {"type": "string", "pattern": "^O[0-9]{2}$"}},
+        "confidence": {"enum": ["high", "medium", "low"]}
+      }
+    }
+  }
+}

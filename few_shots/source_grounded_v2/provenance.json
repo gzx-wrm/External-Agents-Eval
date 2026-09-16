@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.0",
+  "contract_version": "2.0",
+  "mode": "synthetic_public_contracts_v2",
+  "case_ids": [
+    "synthetic-unspecified-default",
+    "synthetic-all-public-types"
+  ],
+  "synthetic_only": true,
+  "uses_benchmark_artifacts": false,
+  "stage_relationships": {
+    "synthetic-unspecified-default": "continuous_synthetic_scenario",
+    "synthetic-all-public-types": "independent_counterfactual_ledger"
+  },
+  "source_policy": "Synthetic micro-cases only; no benchmark task, answer, private evaluation artifact, or prior result was used.",
+  "purpose": "Exactly two complementary synthetic cases demonstrate every Stage A/B object shape: one continuous approve path and one independent counterfactual request_changes path with challenges, late criteria, a regression, and fix/investigate requests."
+}

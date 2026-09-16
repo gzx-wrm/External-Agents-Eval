@@ -1,0 +1,14 @@
+{
+  "dataset_name": "princeton-nlp/SWE-bench_Lite",
+  "source_task_manifest": "/Users/gzx/code/python/HGM/offline_tools/manifests/lite_filtered_random50_seed20260818.json",
+  "source_agent_dir": "/Users/gzx/code/python/external_agents_eval/results_lite_filtered_random50_seed20260818/hermes_deepseek_v4_flash_random50_seed20260818",
+  "selection_method": "retry_success_empty_after_max_iterations_30",
+  "task_count": 5,
+  "task_ids": [
+    "django__django-15738",
+    "sympy__sympy-11870",
+    "sympy__sympy-12236",
+    "sympy__sympy-13146",
+    "sympy__sympy-13895"
+  ]
+}

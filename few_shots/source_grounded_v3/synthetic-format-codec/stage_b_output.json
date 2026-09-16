@@ -1,0 +1,90 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-format-codec",
+  "patch_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "ledger_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "additional_sources": [],
+  "late_obligations": [],
+  "obligation_assessments": [
+    {
+      "obligation_ref": "O01",
+      "source_status": "supported",
+      "source_note": null,
+      "implementation_status": "covered",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "line_start": 28,
+          "line_end": 33,
+          "explanation": "The public encode signature accepts format_version."
+        }
+      ],
+      "validation_evidence": [],
+      "gap": null
+    },
+    {
+      "obligation_ref": "O02",
+      "source_status": "supported",
+      "source_note": null,
+      "implementation_status": "partial",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "line_start": 28,
+          "line_end": 39,
+          "explanation": "The encoder emits a version field, but fills it with DEFAULT_VERSION instead of the caller-selected value."
+        }
+      ],
+      "validation_evidence": [
+        {
+          "command": "python -m pytest tests/test_codec.py -k selected_version",
+          "result": "failed",
+          "explanation": "A non-default public encode call produced a payload tagged with the default version."
+        }
+      ],
+      "gap": "Non-default selections are not retained in the encoded payload."
+    },
+    {
+      "obligation_ref": "O03",
+      "source_status": "supported",
+      "source_note": null,
+      "implementation_status": "covered",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "line_start": 42,
+          "line_end": 55,
+          "explanation": "The decoder still reads existing default-version payloads through the original one-argument entry point."
+        }
+      ],
+      "validation_evidence": [
+        {
+          "command": "python -m pytest tests/test_codec.py -k default_payload_compatibility",
+          "result": "passed",
+          "explanation": "A payload captured from the frozen default encoder decoded without an added caller argument."
+        }
+      ],
+      "gap": null
+    }
+  ],
+  "unexpected_regressions": [],
+  "repair_requests": [
+    {
+      "id": "Q01",
+      "finding_refs": ["O02"],
+      "action": "fix",
+      "problem": "The encoder ignores a non-default format_version when constructing the payload header.",
+      "required_outcome": "Write the caller-selected version into every encoded payload.",
+      "preserve": [
+        "Existing calls that omit format_version continue to emit the default version.",
+        "Existing default-version payloads remain decodable through the original entry point."
+      ],
+      "validation": [
+        "Encode with both the default and one non-default version and inspect the public payload version.",
+        "Decode a frozen default-version payload without passing a version."
+      ]
+    }
+  ],
+  "verdict": "request_changes",
+  "verdict_rationale": "A localized must obligation is only partially implemented and has a discriminating repair plan."
+}

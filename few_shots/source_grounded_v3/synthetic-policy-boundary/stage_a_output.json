@@ -1,0 +1,71 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-policy-boundary",
+  "summary": "Add opt-in strict parsing while preserving valid mapping results.",
+  "sources": [
+    {
+      "id": "S01",
+      "kind": "task",
+      "field": "description",
+      "quote": "Add a strict argument to parse_config."
+    },
+    {
+      "id": "S02",
+      "kind": "task",
+      "field": "description",
+      "quote": "When strict is true, reject unknown keys."
+    },
+    {
+      "id": "S03",
+      "kind": "task",
+      "field": "description",
+      "quote": "Preserve the existing result for valid mappings."
+    },
+    {
+      "id": "S04",
+      "kind": "task",
+      "field": "description",
+      "quote": "The task does not define whether duplicate keys are unknown."
+    },
+    {
+      "id": "S05",
+      "kind": "repository",
+      "path": "src/config.py",
+      "line_start": 10,
+      "line_end": 31
+    }
+  ],
+  "obligations": [
+    {
+      "id": "O01",
+      "statement": "parse_config accepts strict for both text and byte inputs.",
+      "criticality": "must",
+      "basis": "explicit_task",
+      "source_refs": ["S01"],
+      "rationale": "S01 requests strict on parse_config, although it does not enumerate input representations."
+    },
+    {
+      "id": "O02",
+      "statement": "Strict parsing rejects duplicate keys as unknown keys.",
+      "criticality": "must",
+      "basis": "explicit_task",
+      "source_refs": ["S02", "S04"],
+      "rationale": "S02 defines unknown-key rejection while S04 leaves duplicate-key classification unresolved."
+    },
+    {
+      "id": "O03",
+      "statement": "Valid mappings produce the same public result as before the change.",
+      "criticality": "must",
+      "basis": "explicit_task",
+      "source_refs": ["S03", "S05"],
+      "rationale": "S03 explicitly preserves valid results and S05 identifies the frozen result construction."
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "U01",
+      "question": "Should duplicate keys be classified as unknown keys in strict mode?",
+      "source_refs": ["S04", "S05"]
+    }
+  ]
+}

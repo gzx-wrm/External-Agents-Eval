@@ -1,0 +1,10 @@
+{
+  "dataset_name": "princeton-nlp/SWE-bench_Lite",
+  "excluded_overlap_dataset_name": "princeton-nlp/SWE-bench_Verified",
+  "source_task_manifest": "/Users/gzx/code/python/HGM/offline_tools/manifests/lite_filtered_random50_seed20260818.json",
+  "selection_method": "first_item_for_integration_smoke_test",
+  "task_count": 1,
+  "task_ids": [
+    "matplotlib__matplotlib-25442"
+  ]
+}

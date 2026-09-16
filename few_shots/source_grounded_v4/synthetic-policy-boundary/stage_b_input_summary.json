@@ -1,0 +1,6 @@
+{
+  "task_id": "synthetic-policy-boundary",
+  "example_scope": "Independent counterfactual assessment used to demonstrate source correction, Stage A omission detection, and abstention.",
+  "candidate_summary": "The candidate appears to support strict parsing for the existing text entry point and preserves valid result construction, but the required runtime for a focused unknown-key probe is unavailable.",
+  "review_focus": "Reject an overbroad obligation as unsupported, leave a genuinely ambiguous must obligation unclear, add and assess one source-supported late obligation, and use uncertain only when focused validation cannot run safely before abstaining without repair requests."
+}

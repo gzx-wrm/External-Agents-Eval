@@ -1,0 +1,6 @@
+{
+  "task_id": "synthetic-retry-delay",
+  "example_scope": "Continuous assessment of the matching Stage A ledger.",
+  "candidate_summary": "The constructor accepts retry_delay, all retry branches use it, and omission compatibility remains, but the new public parameter is not documented.",
+  "review_focus": "Approve when every supported must obligation is covered; record a missing should obligation without creating a repair request."
+}

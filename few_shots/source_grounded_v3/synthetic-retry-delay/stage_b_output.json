@@ -1,0 +1,18 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-retry-delay",
+  "patch_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "ledger_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "additional_sources": [],
+  "late_obligations": [],
+  "obligation_assessments": [
+    {"obligation_ref": "O01", "source_status": "supported", "source_note": null, "implementation_status": "covered", "implementation_evidence": [{"path": "src/client.py", "line_start": 20, "line_end": 27, "explanation": "The public constructor accepts and stores retry_delay."}], "validation_evidence": [{"command": "python -m pytest tests/test_client.py -k explicit_delay", "result": "passed", "explanation": "The public constructor accepted an explicit delay."}], "gap": null},
+    {"obligation_ref": "O02", "source_status": "supported", "source_note": null, "implementation_status": "covered", "implementation_evidence": [{"path": "src/client.py", "line_start": 40, "line_end": 54, "explanation": "Both retry branches wait using the stored value."}], "validation_evidence": [{"command": "python -m pytest tests/test_client.py -k every_retry", "result": "passed", "explanation": "A focused public test observed the configured delay before each retry."}], "gap": null},
+    {"obligation_ref": "O03", "source_status": "supported", "source_note": null, "implementation_status": "covered", "implementation_evidence": [{"path": "src/client.py", "line_start": 20, "line_end": 27, "explanation": "retry_delay has a default, preserving the prior call shape."}], "validation_evidence": [{"command": "python -m pytest tests/test_client.py -k omitted_delay", "result": "passed", "explanation": "The original no-argument call continued to succeed."}], "gap": null},
+    {"obligation_ref": "O04", "source_status": "supported", "source_note": null, "implementation_status": "missing", "implementation_evidence": [], "validation_evidence": [], "gap": "The public constructor documentation does not mention retry_delay."}
+  ],
+  "unexpected_regressions": [],
+  "repair_requests": [],
+  "verdict": "approve",
+  "verdict_rationale": "Every supported must obligation is covered and no blocking regression exists; the documented should-only gap does not trigger Repair."
+}

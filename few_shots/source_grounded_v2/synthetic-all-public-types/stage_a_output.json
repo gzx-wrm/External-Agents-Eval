@@ -1,0 +1,153 @@
+{
+  "schema_version": "2.0",
+  "task_id": "synthetic-all-public-types",
+  "source_policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "feature_summary": "Round-trip every exported Shape implementation while preserving observable fields and rejecting unknown non-public tags.",
+  "scope": {
+    "in_scope": ["public Shape discovery", "Circle and Loop encoding and decoding", "unknown-tag rejection"],
+    "out_of_scope": ["private test-only shapes", "assigning externally standardized numeric tags"],
+    "assumptions": []
+  },
+  "sources": [
+    {
+      "id": "S01",
+      "kind": "issue",
+      "locator": {
+        "field": "body",
+        "quote": "All public Shape implementations must encode and decode without losing their observable fields."
+      }
+    },
+    {
+      "id": "S02",
+      "kind": "issue",
+      "locator": {
+        "field": "body",
+        "quote": "Unknown non-public type tags must continue to be rejected."
+      }
+    },
+    {
+      "id": "S03",
+      "kind": "repository",
+      "locator": {
+        "path": "src/shapes.py",
+        "base_revision": "2222222222222222222222222222222222222222",
+        "line_start": 1,
+        "line_end": 5,
+        "quote": "class Circle(Shape):\n    radius: float\n\nclass Loop(Shape):\n    points: tuple[int, ...]",
+        "file_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      }
+    },
+    {
+      "id": "S04",
+      "kind": "repository",
+      "locator": {
+        "path": "src/codec.py",
+        "base_revision": "2222222222222222222222222222222222222222",
+        "line_start": 1,
+        "line_end": 4,
+        "quote": "PUBLIC_SHAPES = (Circle, Loop)\n\ndef decode(tag, payload):\n    raise UnknownShapeTag(tag)",
+        "file_sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+      }
+    },
+    {
+      "id": "S05",
+      "kind": "repository",
+      "locator": {
+        "path": "tests/test_codec.py",
+        "base_revision": "2222222222222222222222222222222222222222",
+        "line_start": 1,
+        "line_end": 2,
+        "quote": "def test_unknown_tag_is_rejected():\n    assert_raises(UnknownShapeTag, decode, 255, b'')",
+        "file_sha256": "7777777777777777777777777777777777777777777777777777777777777777"
+      }
+    }
+  ],
+  "obligations": [
+    {
+      "id": "O01",
+      "statement": "Identify the complete public Shape set.",
+      "category": "public_api",
+      "acceptance_criteria": [
+        {
+          "id": "O01.C01",
+          "statement": "Circle and Loop are both included in the exported public Shape set.",
+          "criticality": "must",
+          "basis_kind": "repository_contract",
+          "source_refs": ["S03", "S04"],
+          "derivation": "The frozen public declarations and registry identify the finite public set needed to interpret the issue's universal quantifier.",
+          "open_questions": [],
+          "confidence": "high"
+        }
+      ],
+      "affected_surfaces": ["PUBLIC_SHAPES", "Circle", "Loop"],
+      "dependencies": []
+    },
+    {
+      "id": "O02",
+      "statement": "Round-trip every public Shape and preserve its observable fields.",
+      "category": "serialization",
+      "acceptance_criteria": [
+        {
+          "id": "O02.C01",
+          "statement": "Circle and Loop each encode and decode successfully.",
+          "criticality": "must",
+          "basis_kind": "explicit_issue",
+          "source_refs": ["S01", "S03", "S04"],
+          "derivation": "The issue covers every public implementation, and the repository sources enumerate Circle and Loop.",
+          "open_questions": [],
+          "confidence": "high"
+        },
+        {
+          "id": "O02.C02",
+          "statement": "A successful round trip preserves Circle.radius and the ordered Loop.points tuple.",
+          "criticality": "must",
+          "basis_kind": "compatibility_inferred",
+          "source_refs": ["S01", "S03"],
+          "derivation": "The issue requires preservation of observable fields, and the base public declarations identify those fields and their ordered representation.",
+          "open_questions": [],
+          "confidence": "high"
+        }
+      ],
+      "affected_surfaces": ["encode", "decode", "shape payloads"],
+      "dependencies": ["O01"]
+    },
+    {
+      "id": "O03",
+      "statement": "Keep fail-closed handling for unknown tags.",
+      "category": "error_handling",
+      "acceptance_criteria": [
+        {
+          "id": "O03.C01",
+          "statement": "Decoding an unknown non-public tag raises UnknownShapeTag rather than constructing a public Shape.",
+          "criticality": "must",
+          "basis_kind": "explicit_issue",
+          "source_refs": ["S02", "S04", "S05"],
+          "derivation": "The issue explicitly preserves rejection, and the base implementation and public test establish the public error behavior.",
+          "open_questions": [],
+          "confidence": "high"
+        }
+      ],
+      "affected_surfaces": ["decode", "UnknownShapeTag"],
+      "dependencies": []
+    },
+    {
+      "id": "O04",
+      "statement": "Do not turn an internal tag choice into an external requirement.",
+      "category": "serialization",
+      "acceptance_criteria": [
+        {
+          "id": "O04.C01",
+          "statement": "Circle uses numeric tag 1 and Loop uses numeric tag 2.",
+          "criticality": "unspecified",
+          "basis_kind": "unspecified",
+          "source_refs": ["S01", "S04"],
+          "derivation": "The sources require complete public coverage but do not authorize exact numeric assignments.",
+          "open_questions": ["The implementation may choose stable internal tags consistent with its public format contract."],
+          "confidence": "high"
+        }
+      ],
+      "affected_surfaces": ["wire tags"],
+      "dependencies": ["O02"]
+    }
+  ]
+}

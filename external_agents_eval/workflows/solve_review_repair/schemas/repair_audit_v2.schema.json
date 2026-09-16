@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/repair_audit_v2.schema.json",
+  "title": "RepairAuditV2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "p0_sha256", "assessment_sha256", "effective_review_set_sha256", "additional_sources", "changed_paths", "changes", "unaddressed_requests", "validation_summary"],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "p0_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "assessment_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "effective_review_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "additional_sources": {"type": "array", "maxItems": 16, "items": {"$ref": "https://external-agents-eval.local/review_obligations_v2.schema.json#/$defs/source"}},
+    "changed_paths": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/repoPath"}},
+    "changes": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/change"}},
+    "unaddressed_requests": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/unaddressed"}},
+    "validation_summary": {"type": "string", "minLength": 1, "maxLength": 4000}
+  },
+  "$defs": {
+    "repoPath": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"},
+    "sourceCheck": {"enum": ["supported", "contradicted", "unresolved", "design_choice"]},
+    "change": {
+      "type": "object", "additionalProperties": false,
+      "required": ["change_id", "request_refs", "criterion_refs", "risk_tags", "before_behavior", "after_behavior", "source_refs", "source_check", "counterevidence", "preserve_behaviors", "decision", "changed_paths", "validation"],
+      "properties": {
+        "change_id": {"type": "string", "pattern": "^C[0-9]{2}$"},
+        "request_refs": {"type": "array", "maxItems": 3, "uniqueItems": true, "items": {"type": "string", "pattern": "^Q[0-9]{2}$"}},
+        "criterion_refs": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "pattern": "^(?:O[0-9]{2}\\.C[0-9]{2}|L[0-9]{2}\\.C[0-9]{2})$"}},
+        "risk_tags": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"enum": ["return_value", "data_representation", "information_retention", "default", "ordering", "selection", "error_semantics", "public_api", "timing", "behavior_removal", "requirement_relaxation", "test_expectation", "out_of_request_scope"]}},
+        "before_behavior": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "after_behavior": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "source_refs": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"type": "string", "pattern": "^S[0-9]{2,3}$"}},
+        "source_check": {"$ref": "#/$defs/sourceCheck"},
+        "counterevidence": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 2000}},
+        "preserve_behaviors": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 2000}},
+        "decision": {"enum": ["implement", "defer", "reject"]},
+        "changed_paths": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/repoPath"}},
+        "validation": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/validation"}}
+      }
+    },
+    "validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["command", "exit_code", "expected", "actual", "log_path"],
+      "properties": {
+        "command": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "exit_code": {"type": ["integer", "null"]},
+        "expected": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "actual": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "log_path": {"type": ["string", "null"], "maxLength": 4096}
+      }
+    },
+    "unaddressed": {
+      "type": "object", "additionalProperties": false,
+      "required": ["request_ref", "reason"],
+      "properties": {
+        "request_ref": {"type": "string", "pattern": "^Q[0-9]{2}$"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 3000}
+      }
+    }
+  }
+}

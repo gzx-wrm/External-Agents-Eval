@@ -1,0 +1,21 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-retry-delay",
+  "summary": "Expose an optional retry delay, apply it on retries, and preserve omission compatibility.",
+  "sources": [
+    {"id": "S01", "kind": "task", "field": "description", "quote": "Add an optional retry_delay argument"},
+    {"id": "S02", "kind": "task", "field": "description", "quote": "apply it before every retry"},
+    {"id": "S03", "kind": "task", "field": "description", "quote": "Preserve calls that omit retry_delay"},
+    {"id": "S04", "kind": "task", "field": "description", "quote": "The internal clock representation is not prescribed."},
+    {"id": "S05", "kind": "repository", "path": "src/client.py", "line_start": 8, "line_end": 14}
+  ],
+  "obligations": [
+    {"id": "O01", "statement": "The public client accepts an optional retry_delay argument.", "criticality": "must", "basis": "explicit_task", "source_refs": ["S01"], "rationale": "S01 directly requests the public argument."},
+    {"id": "O02", "statement": "The configured retry delay is applied before every retry attempt.", "criticality": "must", "basis": "explicit_task", "source_refs": ["S02"], "rationale": "S02 explicitly applies the value to every retry."},
+    {"id": "O03", "statement": "Existing calls that omit retry_delay remain valid.", "criticality": "must", "basis": "explicit_task", "source_refs": ["S03", "S05"], "rationale": "S03 requires compatibility and S05 identifies the frozen public call form."},
+    {"id": "O04", "statement": "The retry_delay parameter is documented alongside the public constructor.", "criticality": "should", "basis": "repository_contract", "source_refs": ["S05"], "rationale": "The frozen public constructor documents its public parameters; retaining that convention is non-blocking quality work."}
+  ],
+  "open_questions": [
+    {"id": "U01", "question": "Which internal clock or duration representation should store retry_delay?", "source_refs": ["S04", "S05"]}
+  ]
+}

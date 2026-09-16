@@ -12,7 +12,7 @@ DEFAULT_CHECKOUT_DIR = Path(".benchmarks/deep-swe")
 DEFAULT_MANIFEST = Path(__file__).with_name("data") / "deepswe_v1.1_random60_seed20260901.json"
 DEFAULT_JOBS_DIR = Path("results/deepswe")
 PIER_REQUIREMENT = "datacurve-pier==0.3.1"
-DEEPSWE_AGENTS = ("pi", "hermes", "codex")
+DEEPSWE_AGENTS = ("pi", "pi-review-repair", "pi-v5-review-repair", "hermes", "codex")
 
 CODEX_VERSION = "0.152.0"
 CODEX_CONFIG_FILE = Path(__file__).with_name("data") / "codex_deepseek.toml"

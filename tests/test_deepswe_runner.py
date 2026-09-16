@@ -1,8 +1,11 @@
 import asyncio
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
-from external_agents_eval.benchmarks.deepswe import runner
+import pytest
+
+from external_agents_eval.benchmarks.deepswe import pier_compat, runner
 from external_agents_eval.benchmarks.deepswe.config import (
     CODEX_CONFIG_FILE,
     CODEX_VERSION,
@@ -10,8 +13,19 @@ from external_agents_eval.benchmarks.deepswe.config import (
 from external_agents_eval.benchmarks.deepswe.manifest import DeepSWEManifest
 from external_agents_eval.benchmarks.deepswe.pier_compat import (
     DEEPSWE_BUILDER_ENV,
+    _is_transient_environment_start_error,
+    classify_verifier_failure,
     install_docker_builder_patch,
     install_docker_image_cleanup_patch,
+    install_environment_start_retry_patch,
+    install_registry_start_retry_patch,
+    install_resource_isolation_patch,
+    install_verifier_observability_patch,
+)
+from external_agents_eval.benchmarks.deepswe.reviewer_experiment_manifest import (
+    DEVELOPMENT_TASK_IDS,
+    ReviewerExperimentManifest,
+    load_frozen_few_shots,
 )
 from external_agents_eval.benchmarks.deepswe.runner import (
     PIER_COMPAT_MODULE,
@@ -35,6 +49,42 @@ def _manifest(tmp_path):
     )
 
 
+def _reviewer_manifest(tmp_path):
+    return ReviewerExperimentManifest(
+        path=tmp_path / "p0-manifest.json",
+        source_job_id="source-job",
+        source_job_dir=tmp_path / "source-job",
+        source_manifest_path=tmp_path / "manifest.json",
+        source_manifest_sha256="a" * 64,
+        task_ids=("task-a",),
+        patches={},
+        raw={},
+    )
+
+
+def _write_few_shots(root):
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "provenance.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "mode": "public_only",
+                "development_task_ids": list(DEVELOPMENT_TASK_IDS),
+            }
+        )
+    )
+    for task_id in DEVELOPMENT_TASK_IDS:
+        task_dir = root / task_id
+        task_dir.mkdir(parents=True)
+        for filename in (
+            "stage_a_input.json",
+            "stage_a_output.json",
+            "stage_b_input_summary.json",
+            "stage_b_output.json",
+        ):
+            (task_dir / filename).write_text(json.dumps({"task_id": task_id}))
+
+
 def test_pier_command_uses_exact_manifest_and_secret_template(tmp_path):
     command = build_pier_command(
         pier_executable="pier",
@@ -55,6 +105,446 @@ def test_pier_command_uses_exact_manifest_and_secret_template(tmp_path):
         "task-a",
     ]
     assert "--sample-seed" not in command
+
+
+def test_pier_command_can_select_one_manifest_task(tmp_path):
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="pi",
+        jobs_dir=Path("/jobs"),
+        job_name="subset",
+        include_task_ids=("task-a",),
+    )
+    assert command.count("--include-task-name") == 1
+    assert command[-2:] == ["--include-task-name", "task-a"]
+
+
+@pytest.mark.parametrize(
+    ("selected", "message"),
+    [
+        ((), "empty"),
+        (("task-a", "task-a"), "unique"),
+        (("unknown",), "outside"),
+    ],
+)
+def test_pier_command_rejects_invalid_task_subsets(tmp_path, selected, message):
+    with pytest.raises(ValueError, match=message):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi",
+            jobs_dir=Path("/jobs"),
+            job_name="subset",
+            include_task_ids=selected,
+        )
+
+
+def test_review_command_freezes_digest_and_forbids_task_level_retries(tmp_path):
+    digest = "b" * 64
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="pi-review-repair",
+        jobs_dir=Path("/jobs"),
+        job_name="review",
+        few_shot_dir=Path("/frozen/few-shots"),
+        few_shot_digest=digest,
+    )
+    assert f"few_shot_digest={digest}" in command
+    assert "few_shot_dir=/frozen/few-shots" in command
+    assert "review_arm=E0" in command
+    timeout_index = command.index("--agent-timeout-multiplier")
+    assert command[timeout_index + 1] == "4"
+    with pytest.raises(ValueError, match="forbids automatic task-level retries"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi-review-repair",
+            jobs_dir=Path("/jobs"),
+            job_name="review",
+            attempts=2,
+        )
+
+def test_v5_command_accepts_frozen_p0_without_legacy_contract_arguments(tmp_path):
+    reviewer_manifest = _reviewer_manifest(tmp_path)
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="pi-v5-review-repair",
+        jobs_dir=Path("/jobs"),
+        job_name="review-v5",
+        reviewer_manifest=reviewer_manifest,
+        workflow_timeout_sec=3600,
+    )
+
+    assert (
+        "external_agents_eval.agents.pier.pi_v5_solve_review_repair:"
+        "PiV5SolveReviewRepairPierAgent"
+    ) in command
+    assert f"p0_manifest={reviewer_manifest.path.resolve()}" in command
+    assert "workflow_timeout_sec=3600" in command
+    assert not any("review_contract_version=" in argument for argument in command)
+    assert not any("review_prompt_version=" in argument for argument in command)
+    assert command[-2:] == ["--include-task-name", "task-a"]
+
+    with pytest.raises(ValueError, match="forbids automatic task-level retries"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi-v5-review-repair",
+            jobs_dir=Path("/jobs"),
+            job_name="review-v5-retry",
+            attempts=2,
+        )
+
+    with pytest.raises(ValueError, match="valid only for pi-review-repair"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi-v5-review-repair",
+            jobs_dir=Path("/jobs"),
+            job_name="review-v5-legacy-contract",
+            review_contract_version="3.0",
+        )
+
+
+def test_v5_dry_run_records_v5_workflow_without_few_shots(
+    tmp_path, monkeypatch, capsys
+):
+    checkout = tmp_path / "checkout"
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+
+    runner.run_pier(
+        checkout=checkout,
+        manifest=_manifest(tmp_path),
+        agent_id="pi-v5-review-repair",
+        jobs_dir=tmp_path / "jobs",
+        environment="modal",
+        dry_run=True,
+        workflow_timeout_sec=3600,
+    )
+
+    metadata = json.loads(capsys.readouterr().out)
+    assert metadata["workflow"] == "solve-review-repair-v5"
+    assert metadata["controller_version"] == "v5-4"
+    assert metadata["prompt_version"] == "v5-5"
+    assert metadata["p0_manifest"] is None
+    assert "workflow_timeout_sec=3600" in metadata["command"]
+    assert not any(
+        "few_shot" in argument or "review_contract_version" in argument
+        for argument in metadata["command"]
+    )
+
+def test_review_command_can_select_v2_source_and_repair_audit_arms(tmp_path):
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="pi-review-repair",
+        jobs_dir=Path("/jobs"),
+        job_name="review-v2",
+        few_shot_dir=Path("/frozen/few-shots-v2"),
+        few_shot_digest="b" * 64,
+        review_arm="E2",
+    )
+    assert "review_arm=E2" in command
+
+    with pytest.raises(ValueError, match="valid only"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi",
+            jobs_dir=Path("/jobs"),
+            job_name="invalid-v2",
+            review_arm="E2",
+        )
+
+
+def test_review_command_can_select_v3_without_changing_arm_meaning(tmp_path):
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="pi-review-repair",
+        jobs_dir=Path("/jobs"),
+        job_name="review-v3",
+        few_shot_dir=Path("/frozen/few-shots-v3"),
+        few_shot_digest="b" * 64,
+        review_arm="E2",
+        review_contract_version="3.0",
+    )
+    assert "review_arm=E2" in command
+    assert "review_contract_version=3.0" in command
+
+    with pytest.raises(ValueError, match="incompatible"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi-review-repair",
+            jobs_dir=Path("/jobs"),
+            job_name="invalid-v3",
+            review_arm="E0",
+            review_contract_version="3.0",
+        )
+
+
+def test_review_command_can_select_v4_prompt_with_v3_contract(tmp_path):
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="pi-review-repair",
+        jobs_dir=Path("/jobs"),
+        job_name="review-v4",
+        few_shot_dir=Path("/frozen/few-shots-v4"),
+        few_shot_digest="b" * 64,
+        review_arm="E2",
+        review_contract_version="3.0",
+        review_prompt_version="4.0",
+    )
+    assert "review_contract_version=3.0" in command
+    assert "review_prompt_version=4.0" in command
+
+    with pytest.raises(ValueError, match="requires contract v3.0"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi-review-repair",
+            jobs_dir=Path("/jobs"),
+            job_name="invalid-v4",
+            review_arm="E2",
+            review_contract_version="2.0",
+            review_prompt_version="4.0",
+        )
+
+    with pytest.raises(ValueError, match="valid only"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi",
+            jobs_dir=Path("/jobs"),
+            job_name="invalid-v4-agent",
+            review_prompt_version="4.0",
+        )
+
+
+def test_v2_review_run_records_contract_and_uses_synthetic_few_shots(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    source = Path(__file__).resolve().parents[1] / "few_shots/source_grounded_v2"
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+    monkeypatch.setattr(runner, "_run_pier_process", lambda _command, _env: None)
+    monkeypatch.setattr(runner, "_resolve_pier_executable", lambda command: command)
+
+    runner.run_pier(
+        checkout=checkout,
+        manifest=_manifest(tmp_path),
+        agent_id="pi-review-repair",
+        jobs_dir=tmp_path / "jobs",
+        job_name="v2-review",
+        environment="modal",
+        pier_executable="/bin/true",
+        few_shot_dir=source,
+        review_arm="E2",
+    )
+
+    record = json.loads((tmp_path / "jobs/v2-review.run.json").read_text())
+    assert record["workflow"] == "solve-review-repair-once-v2"
+    assert record["experiment_arm"] == "E2"
+    assert record["contract_version"] == "2.0"
+    assert record["few_shot_mode"] == "synthetic_public_contracts_v2"
+    assert "review_arm=E2" in record["command"]
+
+
+def test_v3_review_run_records_obligation_workflow_and_few_shots(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    source = Path(__file__).resolve().parents[1] / "few_shots/source_grounded_v3"
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+    monkeypatch.setattr(runner, "_run_pier_process", lambda _command, _env: None)
+    monkeypatch.setattr(runner, "_resolve_pier_executable", lambda command: command)
+
+    runner.run_pier(
+        checkout=checkout,
+        manifest=_manifest(tmp_path),
+        agent_id="pi-review-repair",
+        jobs_dir=tmp_path / "jobs",
+        job_name="v3-review",
+        environment="modal",
+        pier_executable="/bin/true",
+        few_shot_dir=source,
+        review_arm="E2",
+        review_contract_version="3.0",
+    )
+
+    record = json.loads((tmp_path / "jobs/v3-review.run.json").read_text())
+    assert record["workflow"] == "solve-review-repair-once-v3"
+    assert record["experiment_arm"] == "E2"
+    assert record["contract_version"] == "3.0"
+    assert record["few_shot_mode"] == "synthetic_public_contracts_v3"
+    assert "review_contract_version=3.0" in record["command"]
+
+
+def test_v4_review_run_records_prompt_version_and_matching_few_shots(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    source = Path(__file__).resolve().parents[1] / "few_shots/source_grounded_v4"
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+    monkeypatch.setattr(runner, "_run_pier_process", lambda _command, _env: None)
+    monkeypatch.setattr(runner, "_resolve_pier_executable", lambda command: command)
+
+    runner.run_pier(
+        checkout=checkout,
+        manifest=_manifest(tmp_path),
+        agent_id="pi-review-repair",
+        jobs_dir=tmp_path / "jobs",
+        job_name="v4-review",
+        environment="modal",
+        pier_executable="/bin/true",
+        few_shot_dir=source,
+        review_arm="E2",
+        review_contract_version="3.0",
+        review_prompt_version="4.0",
+    )
+
+    record = json.loads((tmp_path / "jobs/v4-review.run.json").read_text())
+    assert record["workflow"] == "solve-review-repair-once-v3"
+    assert record["contract_version"] == "3.0"
+    assert record["prompt_version"] == "4.0"
+    assert "review_prompt_version=4.0" in record["command"]
+
+
+def test_review_run_rejects_prompt_and_few_shot_version_mismatch(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    v3 = Path(__file__).resolve().parents[1] / "few_shots/source_grounded_v3"
+    v4 = Path(__file__).resolve().parents[1] / "few_shots/source_grounded_v4"
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+
+    common = {
+        "checkout": checkout,
+        "manifest": _manifest(tmp_path),
+        "agent_id": "pi-review-repair",
+        "jobs_dir": tmp_path / "jobs",
+        "environment": "modal",
+        "pier_executable": "/bin/true",
+        "dry_run": True,
+        "review_arm": "E2",
+        "review_contract_version": "3.0",
+    }
+    with pytest.raises(ValueError, match="prompt version does not match"):
+        runner.run_pier(
+            **common,
+            few_shot_dir=v3,
+            review_prompt_version="4.0",
+        )
+    with pytest.raises(ValueError, match="prompt version does not match"):
+        runner.run_pier(**common, few_shot_dir=v4)
+
+
+def test_review_run_snapshots_few_shots_and_records_batch_digest(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    source = tmp_path / "few-shots"
+    _write_few_shots(source)
+    expected = load_frozen_few_shots(source)
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+    monkeypatch.setattr(runner, "_run_pier_process", lambda _command, _env: None)
+    monkeypatch.setattr(runner, "_resolve_pier_executable", lambda command: command)
+
+    runner.run_pier(
+        checkout=checkout,
+        manifest=_manifest(tmp_path),
+        agent_id="pi-review-repair",
+        jobs_dir=tmp_path / "jobs",
+        job_name="frozen-review",
+        environment="modal",
+        pier_executable="/bin/true",
+        few_shot_dir=source,
+    )
+
+    record = json.loads((tmp_path / "jobs/frozen-review.run.json").read_text())
+    snapshot = Path(record["few_shot_dir"])
+    assert snapshot != source
+    assert snapshot.parent.name == ".review_inputs"
+    assert record["few_shot_digest"] == expected.digest
+    assert record["few_shot_file_sha256"] == dict(expected.file_sha256)
+    assert f"few_shot_digest={expected.digest}" in record["command"]
+    assert record["agent_timeout_multiplier"] == 4.0
+    assert record["internal_role_timeouts_sec"] == {
+        "solver": 10_800,
+        "repair": 10_800,
+        "specification_reviewer": 3_600,
+        "patch_reviewer": 3_600,
+        "json_corrector": 1_800,
+    }
+
+    expected.stage_a[0].write_text(
+        json.dumps({"task_id": DEVELOPMENT_TASK_IDS[0], "changed": True})
+    )
+    assert load_frozen_few_shots(snapshot).digest == expected.digest
+
+
+def test_run_record_contains_only_selected_tasks(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+    monkeypatch.setattr(runner, "_run_pier_process", lambda _command, _env: None)
+    monkeypatch.setattr(runner, "_resolve_pier_executable", lambda command: command)
+
+    runner.run_pier(
+        checkout=checkout,
+        manifest=_manifest(tmp_path),
+        agent_id="pi",
+        jobs_dir=tmp_path / "jobs",
+        job_name="selected-run",
+        environment="modal",
+        pier_executable="/bin/true",
+        task_ids=("task-a",),
+    )
+
+    record = json.loads((tmp_path / "jobs/selected-run.run.json").read_text())
+    assert record["task_ids"] == ["task-a"]
+    assert record["command"].count("--include-task-name") == 1
 
 
 def test_codex_command_uses_pier_native_agent_and_secret_safe_config(tmp_path):
@@ -178,6 +668,216 @@ def test_cleanup_patch_keeps_final_image_removal_pass():
     assert trial._is_agent_environment_stopped is True
 
 
+def test_cleanup_patch_retains_builder_cache_between_trials(monkeypatch):
+    class FakeTrial:
+        _external_eval_cleanup_patch = False
+
+        def __init__(self):
+            self._is_agent_environment_stopped = False
+
+        async def _stop_agent_environment(self, *, keep_images=False):
+            self._is_agent_environment_stopped = True
+
+    monkeypatch.setenv(DEEPSWE_BUILDER_ENV, "dedicated-builder")
+    install_docker_image_cleanup_patch(FakeTrial)
+    trial = FakeTrial()
+
+    asyncio.run(trial._stop_agent_environment())
+
+    assert trial._is_agent_environment_stopped is True
+
+
+def test_environment_retry_recognizes_proxy_apt_transport_failures_only():
+    assert _is_transient_environment_start_error(
+        "target pier-egress-proxy: Failed to fetch http://ports.ubuntu.com/pkg.deb "
+        "Unable to connect to ports.ubuntu.com:80"
+    )
+    assert not _is_transient_environment_start_error(
+        "target pier-egress-proxy: E: Unable to locate package squid-typo"
+    )
+    assert not _is_transient_environment_start_error(
+        "main: Failed to fetch a project dependency: package not found"
+    )
+
+
+def test_registry_start_retries_two_transient_token_failures(monkeypatch):
+    sleeps = []
+
+    async def fake_sleep(seconds):
+        sleeps.append(seconds)
+
+    class FakeTrialExecution:
+        _external_eval_registry_retry_patch = False
+
+        def __init__(self):
+            self.calls = 0
+            self.environment = SimpleNamespace(logger=SimpleNamespace(warning=lambda *_args: None))
+
+        async def start_environment(self, *, force_build):
+            self.calls += 1
+            if self.calls < 3:
+                raise RuntimeError(
+                    "failed to fetch oauth token: Post https://auth.docker.io/token: EOF"
+                )
+
+    monkeypatch.setattr(pier_compat.asyncio, "sleep", fake_sleep)
+    install_registry_start_retry_patch(FakeTrialExecution)
+    execution = FakeTrialExecution()
+
+    asyncio.run(execution.start_environment(force_build=False))
+
+    assert execution.calls == 3
+    assert sleeps == [1, 2]
+
+
+def test_environment_start_records_retry_count(tmp_path, monkeypatch):
+    async def no_wait(_seconds):
+        return None
+
+    class FakeTrialExecution:
+        _external_eval_environment_retry_patch = False
+
+        def __init__(self):
+            self.calls = 0
+            self.environment = SimpleNamespace(
+                logger=SimpleNamespace(warning=lambda *_args: None),
+                trial_paths=SimpleNamespace(trial_dir=tmp_path),
+            )
+
+        async def start_environment(self, *, force_build):
+            self.calls += 1
+            if self.calls < 3:
+                raise RuntimeError(
+                    "pier-egress-proxy: Failed to fetch package; Unable to connect"
+                )
+
+    monkeypatch.setattr(pier_compat.asyncio, "sleep", no_wait)
+    install_environment_start_retry_patch(FakeTrialExecution)
+    execution = FakeTrialExecution()
+
+    asyncio.run(execution.start_environment(force_build=False))
+
+    record = json.loads((tmp_path / "environment_start.json").read_text())
+    assert record == {
+        "schema_version": "1.0",
+        "status": "succeeded",
+        "attempts": 3,
+        "max_attempts": 3,
+    }
+
+
+def test_registry_start_does_not_retry_unrelated_agent_or_runtime_error(monkeypatch):
+    async def fail_if_called(_seconds):
+        raise AssertionError("sleep should not be called")
+
+    class FakeTrialExecution:
+        _external_eval_registry_retry_patch = False
+
+        def __init__(self):
+            self.calls = 0
+            self.environment = SimpleNamespace(logger=SimpleNamespace(warning=lambda *_args: None))
+
+        async def start_environment(self, *, force_build):
+            self.calls += 1
+            raise RuntimeError("repository setup failed")
+
+    monkeypatch.setattr(pier_compat.asyncio, "sleep", fail_if_called)
+    install_registry_start_retry_patch(FakeTrialExecution)
+    execution = FakeTrialExecution()
+
+    with pytest.raises(RuntimeError, match="repository setup failed"):
+        asyncio.run(execution.start_environment(force_build=False))
+    assert execution.calls == 1
+
+
+def test_registry_start_stops_after_three_transient_failures(monkeypatch):
+    async def no_wait(_seconds):
+        return None
+
+    class FakeTrialExecution:
+        _external_eval_registry_retry_patch = False
+
+        def __init__(self):
+            self.calls = 0
+            self.environment = SimpleNamespace(logger=SimpleNamespace(warning=lambda *_args: None))
+
+        async def start_environment(self, *, force_build):
+            self.calls += 1
+            raise RuntimeError("registry-1.docker.io: TLS handshake timeout")
+
+    monkeypatch.setattr(pier_compat.asyncio, "sleep", no_wait)
+    install_registry_start_retry_patch(FakeTrialExecution)
+    execution = FakeTrialExecution()
+
+    with pytest.raises(RuntimeError, match="TLS handshake timeout"):
+        asyncio.run(execution.start_environment(force_build=True))
+    assert execution.calls == 3
+
+
+def test_verifier_observability_classifies_cancelled_attempt_as_timeout(tmp_path):
+    class FakeTrial:
+        _external_eval_verifier_observability_patch = False
+
+        def __init__(self):
+            self.trial_paths = SimpleNamespace(trial_dir=tmp_path)
+
+        async def _verify_once(self, **_kwargs):
+            raise asyncio.CancelledError()
+
+    install_verifier_observability_patch(FakeTrial)
+    trial = FakeTrial()
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(trial._verify_once())
+
+    attempts = json.loads((tmp_path / "verifier_attempts.json").read_text())
+    summary = json.loads((tmp_path / "verifier_observability.json").read_text())
+    assert attempts[0]["status"] == "failed"
+    assert attempts[0]["failure_class"] == "verifier_timeout"
+    assert summary["original_failure_class"] == "verifier_timeout"
+    assert summary["retry_count"] == 0
+
+
+def test_resource_isolation_patch_binds_agent_and_separate_verifier(tmp_path, monkeypatch):
+    class FakeTrial:
+        _external_eval_resource_isolation_patch = False
+
+        def __init__(self, config):
+            self.config = config
+            self._environment = live_environment
+            self.trial_paths = SimpleNamespace(trial_dir=tmp_path)
+
+    task_env = SimpleNamespace(cpus=None, memory_mb=None)
+    live_environment = SimpleNamespace(
+        task_env_config=task_env,
+        _override_cpus=None,
+        _override_memory_mb=None,
+    )
+    config = SimpleNamespace(
+        environment=SimpleNamespace(override_cpus=None, override_memory_mb=None)
+    )
+    monkeypatch.setenv("EXTERNAL_EVAL_TRIAL_CPUS", "2")
+    monkeypatch.setenv("EXTERNAL_EVAL_TRIAL_MEMORY_MB", "768")
+    install_resource_isolation_patch(FakeTrial)
+    trial = FakeTrial(config)
+
+    assert trial.config.environment.override_cpus == 2
+    assert trial.config.environment.override_memory_mb == 768
+    assert trial._environment._override_cpus == 2
+    assert trial._environment._override_memory_mb == 768
+    assert task_env.cpus == 2
+    assert task_env.memory_mb == 768
+    record = json.loads((tmp_path / "resource_limits.json").read_text())
+    assert record["cpus"] == 2
+    assert record["memory_mb"] == 768
+
+
+def test_verifier_failure_classifier_keeps_test_failures_separate():
+    assert classify_verifier_failure("pytest assertion failed") == "test_failure"
+    assert classify_verifier_failure("docker build failed") == "verifier_build_failure"
+    assert classify_verifier_failure("connection reset by peer") == "verifier_infrastructure_flake"
+
+
 def test_builder_patch_adds_explicit_compose_builder(monkeypatch):
     class FakeDockerEnvironment:
         _external_eval_builder_patch = False
@@ -284,6 +984,119 @@ def test_builder_creation_adds_detected_proxy_options(monkeypatch):
         *proxy_options,
         "--bootstrap",
     ]
+
+
+def test_proxy_prewarm_retries_and_uses_pier_generated_context(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        context = Path(command[-1])
+        dockerfile = (context / "Dockerfile").read_text()
+        start_script = (context / "start-squid.sh").read_text()
+        assert "FROM ubuntu:24.04" in dockerfile
+        assert "apache2-utils ca-certificates squid" in dockerfile
+        assert "exec squid -N" in start_script
+        return runner.subprocess.CompletedProcess(
+            command,
+            returncode=1 if len(calls) < 3 else 0,
+            stdout=(
+                "target pier-egress-proxy: Failed to fetch package; Unable to connect"
+                if len(calls) < 3
+                else "built"
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+    monkeypatch.setattr(runner.time, "sleep", sleeps.append)
+
+    attempts = runner._prewarm_egress_proxy("dedicated-builder")
+
+    assert attempts == 3
+    assert sleeps == [1, 2]
+    assert all(call[3:5] == ["--builder", "dedicated-builder"] for call in calls)
+
+
+def test_reviewer_base_preflight_accepts_short_sha_and_rejects_mismatch(tmp_path):
+    task_dir = tmp_path / "tasks/task-a/environment"
+    task_dir.mkdir(parents=True)
+    (task_dir / "Dockerfile").write_text("ARG BASE_SHA=7cef35b" + "a" * 33 + "\n")
+    manifest = _reviewer_manifest(tmp_path)
+    manifest.patches["task-a"] = SimpleNamespace(base_commit="7cef35b")
+
+    runner._validate_reviewer_task_bases(
+        checkout=tmp_path,
+        manifest=manifest,
+        task_ids=("task-a",),
+    )
+
+    manifest.patches["task-a"] = SimpleNamespace(base_commit="7cef35c")
+    with pytest.raises(ValueError, match="does not match the active task Dockerfile"):
+        runner._validate_reviewer_task_bases(
+            checkout=tmp_path,
+            manifest=manifest,
+            task_ids=("task-a",),
+        )
+
+
+def test_docker_run_prewarms_once_and_retains_cache_until_job_end(tmp_path, monkeypatch):
+    events = []
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, checkout: checkout,
+    )
+    monkeypatch.setattr(runner, "_resolve_pier_executable", lambda command: command)
+    monkeypatch.setattr(
+        runner,
+        "_create_dedicated_builder",
+        lambda name: events.append(("create", name)),
+    )
+    monkeypatch.setattr(
+        runner,
+        "_prewarm_egress_proxy",
+        lambda name: events.append(("prewarm", name)) or 2,
+    )
+    monkeypatch.setattr(
+        runner,
+        "_run_pier_process",
+        lambda _command, _env: events.append(("run", None)),
+    )
+    monkeypatch.setattr(
+        runner,
+        "_remove_dedicated_builder",
+        lambda name: events.append(("remove", name)),
+    )
+
+    runner.run_pier(
+        checkout=tmp_path / "checkout",
+        manifest=_manifest(tmp_path),
+        agent_id="pi",
+        jobs_dir=tmp_path / "jobs",
+        job_name="cached-docker-run",
+        pier_executable="pier",
+        environment="docker",
+    )
+
+    record = json.loads((tmp_path / "jobs/cached-docker-run.run.json").read_text())
+    builder = record["docker_builder"]
+    assert events == [
+        ("create", builder),
+        ("prewarm", builder),
+        ("run", None),
+        ("remove", builder),
+    ]
+    assert record["docker_builder_cache_policy"] == (
+        "retain-through-job-remove-after-job"
+    )
+    assert record["docker_egress_proxy_prewarm"] == {
+        "status": "completed",
+        "attempts": 2,
+        "max_attempts": 3,
+    }
 
 
 def test_pier_process_waits_for_cleanup_after_keyboard_interrupt(monkeypatch):

@@ -1,0 +1,33 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-policy-boundary",
+  "candidate_patch_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "assessment_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "effective_review_set_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "changed_paths": [],
+  "changes": [
+    {
+      "change_id": "C01",
+      "request_refs": ["Q01"],
+      "finding_refs": ["O01"],
+      "decision": "no_change",
+      "before_behavior": "The candidate's public text parser was suspected not to expose strict.",
+      "after_behavior": "Inspection and focused invocation confirmed that the existing text parser already accepts omitted and explicit strict forms.",
+      "preserve": ["Valid non-strict calls retain their existing result."],
+      "out_of_request_scope": false,
+      "scope_rationale": null,
+      "changed_paths": [],
+      "validation": [
+        {
+          "command": "python -m pytest tests/test_config.py -k 'strict_signature or non_strict_valid'",
+          "result": "passed",
+          "expected": "The text entry point accepts strict and the omitted form preserves its valid result.",
+          "actual": "Both focused public checks passed without a code change.",
+          "log_path": null
+        }
+      ]
+    }
+  ],
+  "unaddressed_requests": [],
+  "validation_summary": "The investigate request was resolved by focused evidence; no candidate files changed."
+}

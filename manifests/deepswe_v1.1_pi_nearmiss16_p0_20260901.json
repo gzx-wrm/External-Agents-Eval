@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0",
+  "experiment": "specification-reviewer-repair-once",
+  "benchmark": "deepswe",
+  "benchmark_revision": "1.1",
+  "benchmark_source_commit": "0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea",
+  "source_job": {
+    "id": "5b8480f5-9f18-414a-aa53-a17aff716c9b",
+    "path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup",
+    "run_record_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup.run.json",
+    "run_record_sha256": "d9fff0ed1e2d9da3f67e5edf50c3c8af4e82e30b06e2dbe82dd2f75540231d1a"
+  },
+  "source_manifest": {
+    "path": "/Users/gzx/code/python/external_agents_eval/external_agents_eval/benchmarks/deepswe/data/deepswe_v1.1_random60_seed20260901.json",
+    "sha256": "1e83f8d4f1ef155a1adad4b8cfb6d796c1457d65a65111624b07f04aca737ecf"
+  },
+  "development_task_ids": [
+    "abs-stepped-slices",
+    "effect-sse-httpapi-streaming"
+  ],
+  "task_ids": [
+    "clack-async-autocomplete-options",
+    "fastapi-deprecation-response-headers",
+    "fastapi-implicit-head-options",
+    "kombu-single-active-consumer-priority",
+    "tomlkit-toml-table-converters",
+    "valibot-recursive-schema-composition",
+    "ytt-jsonpath-query-api",
+    "bandit-interprocedural-taint-checks",
+    "cattrs-partial-structuring-recovery",
+    "expr-try-catch-errors",
+    "httpx-deterministic-cookie-store",
+    "obsidian-linter-link-format-conversion",
+    "returns-validated-error-accumulation",
+    "tengo-callable-instance-isolation",
+    "koota-pair-relation-tracking",
+    "opa-template-string-reconstruction"
+  ],
+  "task_count": 16,
+  "selection_method": "fixed-near-miss-failures-minus-development-cases-v1",
+  "tasks": {
+    "abs-stepped-slices": {
+      "source_trial_id": "abs-stepped-slices__7bahsX7",
+      "base_commit": "cb1b3b671d0ee9fa9da9f7b02f86967953ffd10a",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/abs-stepped-slices__7bahsX7/artifacts/model.patch",
+      "patch_sha256": "8c5340752da74639063271e8bca5e8db0e1aa5ca9419ab98c1d4a366b07038eb",
+      "tracked_diff_sha256": "8c5340752da74639063271e8bca5e8db0e1aa5ca9419ab98c1d4a366b07038eb"
+    },
+    "effect-sse-httpapi-streaming": {
+      "source_trial_id": "effect-sse-httpapi-streaming__KKoJkiV",
+      "base_commit": "9245bc59ebfa688e8c92dd691296ee69d0815e59",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/effect-sse-httpapi-streaming__KKoJkiV/artifacts/model.patch",
+      "patch_sha256": "988f22a5d858643fbb1426abde9749af82606b0461d90b942ff15d4edcf39901",
+      "tracked_diff_sha256": "988f22a5d858643fbb1426abde9749af82606b0461d90b942ff15d4edcf39901"
+    },
+    "clack-async-autocomplete-options": {
+      "source_trial_id": "clack-async-autocomplete-options__pkmiNQ4",
+      "base_commit": "8a96e2dcd7f821d1250b58cf71c327679f94de25",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/clack-async-autocomplete-options__pkmiNQ4/artifacts/model.patch",
+      "patch_sha256": "68df803ae1f49751327f8f3d3c4966b409c7dbc419e909bda395565942cd2573",
+      "tracked_diff_sha256": "68df803ae1f49751327f8f3d3c4966b409c7dbc419e909bda395565942cd2573"
+    },
+    "fastapi-deprecation-response-headers": {
+      "source_trial_id": "fastapi-deprecation-response-hea__eBjwQps",
+      "base_commit": "11614be9021aa4ac078d4d0693a8b5250a1010d8",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/fastapi-deprecation-response-hea__eBjwQps/artifacts/model.patch",
+      "patch_sha256": "d6f55bdd69a4cc759999def80c5ab1814a38bf9e8443bc20b1bb0bb4ecf6d600",
+      "tracked_diff_sha256": "d6f55bdd69a4cc759999def80c5ab1814a38bf9e8443bc20b1bb0bb4ecf6d600"
+    },
+    "fastapi-implicit-head-options": {
+      "source_trial_id": "fastapi-implicit-head-options__qZrPHXT",
+      "base_commit": "11614be9021aa4ac078d4d0693a8b5250a1010d8",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/fastapi-implicit-head-options__qZrPHXT/artifacts/model.patch",
+      "patch_sha256": "2df7377fa148c007a1fb665d788f12fdf035583a4ac4093a37e3b15221e0ab49",
+      "tracked_diff_sha256": "2df7377fa148c007a1fb665d788f12fdf035583a4ac4093a37e3b15221e0ab49"
+    },
+    "kombu-single-active-consumer-priority": {
+      "source_trial_id": "kombu-single-active-consumer-pri__LLhSS2m",
+      "base_commit": "3c5c1bd86376ee73d52a4cc770bdaeab15bbc2f3",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/kombu-single-active-consumer-pri__LLhSS2m/artifacts/model.patch",
+      "patch_sha256": "fe85e6d8af782b9c6c001ca9fac8986702f7963971f6c908a1a9b801f43f3088",
+      "tracked_diff_sha256": "fe85e6d8af782b9c6c001ca9fac8986702f7963971f6c908a1a9b801f43f3088"
+    },
+    "tomlkit-toml-table-converters": {
+      "source_trial_id": "tomlkit-toml-table-converters__NqkeJQ9",
+      "base_commit": "dd05eebc8ed9e30fc6c223088a5a450cb54c1cab",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/tomlkit-toml-table-converters__NqkeJQ9/artifacts/model.patch",
+      "patch_sha256": "719cef5dbc328c65380dc09efc5f5cb8a2eaace88d289ccaf6b90a8009381c65",
+      "tracked_diff_sha256": "719cef5dbc328c65380dc09efc5f5cb8a2eaace88d289ccaf6b90a8009381c65"
+    },
+    "valibot-recursive-schema-composition": {
+      "source_trial_id": "valibot-recursive-schema-composi__4XofxDq",
+      "base_commit": "50016c77c808f9ca80391cf1abc96cc5416cf57d",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/valibot-recursive-schema-composi__4XofxDq/artifacts/model.patch",
+      "patch_sha256": "7428bc238103b861c96b00478fc928141bfde86d69020fd4563ff276a2757247",
+      "tracked_diff_sha256": "7428bc238103b861c96b00478fc928141bfde86d69020fd4563ff276a2757247"
+    },
+    "ytt-jsonpath-query-api": {
+      "source_trial_id": "ytt-jsonpath-query-api__zFTzJvR",
+      "base_commit": "452382821dd9dae7cc36995960656bb94dc47212",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/ytt-jsonpath-query-api__zFTzJvR/artifacts/model.patch",
+      "patch_sha256": "0ea1e90445bcc8e49a90230a53eed09014cfb0696e75e6816f40d7b005e523f9",
+      "tracked_diff_sha256": "0ea1e90445bcc8e49a90230a53eed09014cfb0696e75e6816f40d7b005e523f9"
+    },
+    "bandit-interprocedural-taint-checks": {
+      "source_trial_id": "bandit-interprocedural-taint-che__hmp7ND9",
+      "base_commit": "b46fa3a2723635aa29cc012538df4867ac2ac006",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/bandit-interprocedural-taint-che__hmp7ND9/artifacts/model.patch",
+      "patch_sha256": "c90f0892b9451c7ba0e7b0dbf50877428adbe00b8cdc949525cdd65bb5d04ac5",
+      "tracked_diff_sha256": "c90f0892b9451c7ba0e7b0dbf50877428adbe00b8cdc949525cdd65bb5d04ac5"
+    },
+    "cattrs-partial-structuring-recovery": {
+      "source_trial_id": "cattrs-partial-structuring-recov__9hR4SEt",
+      "base_commit": "6bc4708fb9b2ac52d9a18997e923da6a58916102",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/cattrs-partial-structuring-recov__9hR4SEt/artifacts/model.patch",
+      "patch_sha256": "009fbee2cb4a691795f18e200484671e3682e5c19000575fcd5519a68477af30",
+      "tracked_diff_sha256": "009fbee2cb4a691795f18e200484671e3682e5c19000575fcd5519a68477af30"
+    },
+    "expr-try-catch-errors": {
+      "source_trial_id": "expr-try-catch-errors__UFvKYVg",
+      "base_commit": "851b241a301f7c74646e65e4009c69cf290993a8",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/expr-try-catch-errors__UFvKYVg/artifacts/model.patch",
+      "patch_sha256": "2d77cc5ad455306011f980aebb17cf6efb86350749268f210762daee01fc1148",
+      "tracked_diff_sha256": "2d77cc5ad455306011f980aebb17cf6efb86350749268f210762daee01fc1148"
+    },
+    "httpx-deterministic-cookie-store": {
+      "source_trial_id": "httpx-deterministic-cookie-store__azEi6QR",
+      "base_commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/httpx-deterministic-cookie-store__azEi6QR/artifacts/model.patch",
+      "patch_sha256": "b8476cc7ed82cbb49798c40173f5c488565727a429e5d7c1b82661ea1013acea",
+      "tracked_diff_sha256": "b8476cc7ed82cbb49798c40173f5c488565727a429e5d7c1b82661ea1013acea"
+    },
+    "obsidian-linter-link-format-conversion": {
+      "source_trial_id": "obsidian-linter-link-format-conv__5HrQ5pW",
+      "base_commit": "6393b3ab32a2ace1fc24d4b0f5e0f13a179c874f",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/obsidian-linter-link-format-conv__5HrQ5pW/artifacts/model.patch",
+      "patch_sha256": "07e7b2104b35782f4af0ea4a9611161cf0a48067b15c7c8739eb4dd75a9b3097",
+      "tracked_diff_sha256": "07e7b2104b35782f4af0ea4a9611161cf0a48067b15c7c8739eb4dd75a9b3097"
+    },
+    "returns-validated-error-accumulation": {
+      "source_trial_id": "returns-validated-error-accumula__TfzTmXx",
+      "base_commit": "41607fae1289de2787523c452d75212206b9c7c0",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/returns-validated-error-accumula__TfzTmXx/artifacts/model.patch",
+      "patch_sha256": "9ac1b502f4356390da16e04bfa48bc94456d0422dc36bece8d976b717717cad2",
+      "tracked_diff_sha256": "9ac1b502f4356390da16e04bfa48bc94456d0422dc36bece8d976b717717cad2"
+    },
+    "tengo-callable-instance-isolation": {
+      "source_trial_id": "tengo-callable-instance-isolatio__nyNvZVz",
+      "base_commit": "3cad0da7a51b1206c6f01e3f4fbb44b976d5275c",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/tengo-callable-instance-isolatio__nyNvZVz/artifacts/model.patch",
+      "patch_sha256": "4077952b56651efe1b4bc71ed519a4dadfcffa2ece8cdc6e9a52e397c11fa418",
+      "tracked_diff_sha256": "4077952b56651efe1b4bc71ed519a4dadfcffa2ece8cdc6e9a52e397c11fa418"
+    },
+    "koota-pair-relation-tracking": {
+      "source_trial_id": "koota-pair-relation-tracking__wWP5o9B",
+      "base_commit": "9c434858b2b522002f8c5eb4a554fa8836a7cf3c",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/koota-pair-relation-tracking__wWP5o9B/artifacts/model.patch",
+      "patch_sha256": "2c69ea5395c3f665d496c83c5283174099840cca9b0ae6d9c79d853ebc4fa507",
+      "tracked_diff_sha256": "2c69ea5395c3f665d496c83c5283174099840cca9b0ae6d9c79d853ebc4fa507"
+    },
+    "opa-template-string-reconstruction": {
+      "source_trial_id": "opa-template-string-reconstructi__jaoqwwA",
+      "base_commit": "1ac64ef1a57a531c2723c59848890b88e816d777",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/opa-template-string-reconstructi__jaoqwwA/artifacts/model.patch",
+      "patch_sha256": "ffa6a561d285e39e540eae44301e8df913cf00823b7fd32a62ada0698022f100",
+      "tracked_diff_sha256": "ffa6a561d285e39e540eae44301e8df913cf00823b7fd32a62ada0698022f100"
+    }
+  }
+}

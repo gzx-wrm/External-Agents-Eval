@@ -1,0 +1,9 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-retry-delay",
+  "task": {
+    "title": "Configurable retry delay",
+    "description": "Add an optional retry_delay argument and apply it before every retry. Preserve calls that omit retry_delay. The internal clock representation is not prescribed."
+  },
+  "repository": {"name": "synthetic/retry-client", "base_commit": "1111111111111111111111111111111111111111", "worktree": "/synthetic/retry-client", "state": "base_only"}
+}

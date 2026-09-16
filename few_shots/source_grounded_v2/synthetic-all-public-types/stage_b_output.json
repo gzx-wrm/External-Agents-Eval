@@ -1,0 +1,251 @@
+{
+  "schema_version": "2.0",
+  "task_id": "synthetic-all-public-types",
+  "patch_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "ledger_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "additional_sources": [
+    {
+      "id": "S06",
+      "kind": "repository",
+      "locator": {
+        "path": "docs/format.md",
+        "base_revision": "2222222222222222222222222222222222222222",
+        "line_start": 1,
+        "line_end": 1,
+        "quote": "Decoders accept version-1 envelopes and reject unknown shape tags.",
+        "file_sha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      }
+    }
+  ],
+  "criterion_assessments": [
+    {
+      "criterion_ref": "O01.C01",
+      "source_check": {
+        "status": "understated",
+        "source_refs": ["S03", "S04"],
+        "rationale": "The counterfactual ledger makes Loop optional even though the frozen public declarations and registry include it.",
+        "compliant_but_rejected_example": null,
+        "satisfies_but_violates_example": "A codec that supports only Circle satisfies the weakened criterion but violates the all-public-types requirement."
+      },
+      "implementation_status": "not_applicable",
+      "implementation_evidence": [],
+      "test_evidence": [],
+      "validation_note": null,
+      "gap": null,
+      "confidence": "high"
+    },
+    {
+      "criterion_ref": "O02.C01",
+      "source_check": {
+        "status": "supported",
+        "source_refs": ["S01", "S03", "S04"],
+        "rationale": "The issue's universal quantifier and the public type set require successful encoding and decoding for Circle and Loop.",
+        "compliant_but_rejected_example": null,
+        "satisfies_but_violates_example": "Supporting Circle while rejecting Loop satisfies only a proper subset of the criterion."
+      },
+      "implementation_status": "partial",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "symbol": "encode",
+          "line_start": 6,
+          "line_end": 18,
+          "explanation": "P0 has a Circle branch but raises for Loop."
+        }
+      ],
+      "test_evidence": [
+        {
+          "path": "tests/test_codec.py",
+          "test_name": "test_all_public_shapes_round_trip",
+          "command": "python -m pytest tests/test_codec.py::test_all_public_shapes_round_trip -q",
+          "result": "failed",
+          "explanation": "The Circle row passed and the Loop row failed at encode."
+        }
+      ],
+      "validation_note": null,
+      "gap": "Loop is a public Shape but P0 rejects it instead of round-tripping it.",
+      "confidence": "high"
+    },
+    {
+      "criterion_ref": "O02.C02",
+      "source_check": {
+        "status": "supported",
+        "source_refs": ["S01", "S03"],
+        "rationale": "The issue requires observable fields to survive, and Loop.points is an ordered tuple in the public declaration.",
+        "compliant_but_rejected_example": null,
+        "satisfies_but_violates_example": "Returning a Loop with a reordered points tuple is a successful decode but violates field preservation."
+      },
+      "implementation_status": "missing",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "symbol": "decode",
+          "line_start": 20,
+          "line_end": 30,
+          "explanation": "The available Loop-like decode branch sorts points, losing their observable order."
+        }
+      ],
+      "test_evidence": [],
+      "validation_note": null,
+      "gap": "P0 does not preserve the ordered Loop.points value.",
+      "confidence": "high"
+    },
+    {
+      "criterion_ref": "O03.C01",
+      "source_check": {
+        "status": "supported",
+        "source_refs": ["S02", "S04", "S05"],
+        "rationale": "The issue, decoder behavior, and public test all require fail-closed handling for unknown tags.",
+        "compliant_but_rejected_example": null,
+        "satisfies_but_violates_example": null
+      },
+      "implementation_status": "uncertain",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "symbol": "decode",
+          "line_start": 20,
+          "line_end": 30,
+          "explanation": "Static inspection shows an error branch, but dependency-controlled dispatch may bypass it."
+        }
+      ],
+      "test_evidence": [
+        {
+          "path": "tests/test_codec.py",
+          "test_name": "test_unknown_tag_is_rejected",
+          "command": "python -m pytest tests/test_codec.py::test_unknown_tag_is_rejected -q",
+          "result": "not_run",
+          "explanation": "The optional codec dependency is unavailable, so the public behavior was not executed."
+        }
+      ],
+      "validation_note": null,
+      "gap": "Whether the real public decode path still raises UnknownShapeTag cannot be determined without the optional dependency.",
+      "confidence": "low"
+    },
+    {
+      "criterion_ref": "O04.C01",
+      "source_check": {
+        "status": "overstated",
+        "source_refs": ["S01", "S04"],
+        "rationale": "The sources require coverage and stable decoding behavior but do not prescribe the exact numeric assignments 1 and 2.",
+        "compliant_but_rejected_example": "Using tags 10 and 20 consistently would satisfy the public behavior but fail the invented exact-value criterion.",
+        "satisfies_but_violates_example": null
+      },
+      "implementation_status": "not_applicable",
+      "implementation_evidence": [],
+      "test_evidence": [],
+      "validation_note": null,
+      "gap": null,
+      "confidence": "high"
+    }
+  ],
+  "ledger_challenges": [
+    {
+      "id": "D01",
+      "criterion_ref": "O01.C01",
+      "kind": "weakened_requirement",
+      "source_refs": ["S03", "S04"],
+      "explanation": "The weakened registry criterion must be replaced by one covering both frozen public types.",
+      "alternative_interpretations": [],
+      "disposition": "replaced",
+      "replacement_refs": ["L01.C01"]
+    },
+    {
+      "id": "D02",
+      "criterion_ref": "O04.C01",
+      "kind": "unsupported_specificity",
+      "source_refs": ["S01", "S04"],
+      "explanation": "Exact numeric tags are an implementation choice, not a binding requirement.",
+      "alternative_interpretations": ["Any stable, collision-free internal tag assignment can satisfy the task."],
+      "disposition": "nonbinding",
+      "replacement_refs": []
+    }
+  ],
+  "unexpected_regressions": [
+    {
+      "id": "R01",
+      "problem": "P0 rejects documented version-1 envelopes before inspecting their shape tag.",
+      "severity": "blocker",
+      "blocking": true,
+      "source_refs": ["S06"],
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "symbol": "decode_envelope",
+          "line_start": 32,
+          "line_end": 38,
+          "explanation": "The new version guard accepts only version 2 and rejects the documented version 1."
+        }
+      ]
+    }
+  ],
+  "late_obligation_candidates": [
+    {
+      "id": "L01.C01",
+      "statement": "The exported registry includes every public Shape implementation, including Circle and Loop.",
+      "criticality": "must",
+      "basis_kind": "repository_contract",
+      "source_refs": ["S03", "S04"],
+      "derivation": "The frozen declarations and public registry jointly establish the complete public set omitted by the weakened criterion.",
+      "source_check": {
+        "status": "supported",
+        "source_refs": ["S03", "S04"],
+        "rationale": "Both Circle and Loop are public and registered in the frozen base.",
+        "compliant_but_rejected_example": null,
+        "satisfies_but_violates_example": null
+      },
+      "implementation_status": "missing",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "symbol": "PUBLIC_SHAPES",
+          "line_start": 1,
+          "line_end": 4,
+          "explanation": "P0's effective registry omits Loop."
+        }
+      ],
+      "test_evidence": [
+        {
+          "path": "tests/test_codec.py",
+          "test_name": "test_public_registry_is_complete",
+          "command": "python -m pytest tests/test_codec.py::test_public_registry_is_complete -q",
+          "result": "failed",
+          "explanation": "The public registry contained Circle but not Loop."
+        }
+      ],
+      "gap": "Loop is absent from P0's effective public registry."
+    }
+  ],
+  "verdict": "request_changes",
+  "verdict_rationale": "P0 has confirmed public-type and field-preservation gaps plus a blocking version-compatibility regression; unknown-tag behavior needs a separate investigation.",
+  "abstain_reason": null,
+  "repair_requests": [
+    {
+      "id": "Q01",
+      "priority": 1,
+      "finding_refs": ["O02.C01", "O02.C02", "L01.C01", "R01"],
+      "criterion_refs": ["O02.C01", "O02.C02", "L01.C01"],
+      "source_refs": ["S01", "S03", "S04", "S06"],
+      "action_kind": "fix",
+      "problem": "Loop is omitted/rejected, its ordered fields are not preserved, and version-1 envelopes regress.",
+      "requested_outcome": "Round-trip every public Shape with its fields intact and restore version-1 envelope compatibility.",
+      "preserve_behaviors": ["Continue rejecting unknown non-public shape tags."],
+      "suggested_validation": [
+        "Round-trip nontrivial Circle and Loop values and compare every public field.",
+        "Decode a documented version-1 envelope and an unknown shape tag."
+      ]
+    },
+    {
+      "id": "Q02",
+      "priority": 2,
+      "finding_refs": ["O03.C01"],
+      "criterion_refs": ["O03.C01"],
+      "source_refs": ["S02", "S04", "S05"],
+      "action_kind": "investigate",
+      "problem": "The real unknown-tag dispatch path was not executable in the current environment.",
+      "requested_outcome": "Install or expose the existing public dependency and determine whether unknown tags still raise UnknownShapeTag before making any semantic change.",
+      "preserve_behaviors": ["Do not accept unknown tags merely to make the probe run."],
+      "suggested_validation": ["Run test_unknown_tag_is_rejected through the installed public codec entry point."]
+    }
+  ]
+}

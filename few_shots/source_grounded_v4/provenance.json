@@ -1,0 +1,20 @@
+{
+  "schema_version": "3.0",
+  "contract_version": "3.0",
+  "prompt_version": "4.0",
+  "mode": "synthetic_public_contracts_v3",
+  "case_ids": [
+    "synthetic-retry-delay",
+    "synthetic-format-codec",
+    "synthetic-policy-boundary"
+  ],
+  "synthetic_only": true,
+  "uses_benchmark_artifacts": false,
+  "stage_relationships": {
+    "synthetic-retry-delay": "continuous_synthetic_scenario",
+    "synthetic-format-codec": "continuous_synthetic_scenario",
+    "synthetic-policy-boundary": "independent_counterfactual_ledger"
+  },
+  "source_policy": "Synthetic micro-cases only; no benchmark artifacts or prior evaluation results.",
+  "purpose": "V4 replaces only the codec Stage B demonstration; Stage A and Repair examples remain unchanged."
+}

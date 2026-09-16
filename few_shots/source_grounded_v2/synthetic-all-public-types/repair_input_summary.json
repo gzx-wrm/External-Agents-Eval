@@ -1,0 +1,6 @@
+{
+  "task_id": "synthetic-all-public-types",
+  "request": "Q01 fixes confirmed public-type, field-preservation, and version-compatibility findings; Q02 separately investigates unknown-tag dispatch.",
+  "proposed_change": "Restore Loop registration and ordered fields plus version-1 decoding, while deferring unknown-tag code changes until the optional dependency can be exercised.",
+  "risk": "Combining Q02's uncertain behavior with Q01's confirmed fixes would convert an investigation into an unsupported semantic edit."
+}

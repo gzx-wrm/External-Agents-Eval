@@ -1,0 +1,118 @@
+{
+  "schema_version": "2.0",
+  "task_id": "synthetic-unspecified-default",
+  "source_policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "feature_summary": "Add and apply an optional retry delay while preserving the existing omitted-argument behavior and leaving the numeric fallback unspecified.",
+  "scope": {
+    "in_scope": ["Client construction", "retry scheduling", "omitted-argument compatibility"],
+    "out_of_scope": ["choosing a new numeric fallback", "changing unrelated timeout behavior"],
+    "assumptions": []
+  },
+  "sources": [
+    {
+      "id": "S01",
+      "kind": "issue",
+      "locator": {"field": "title", "quote": "Configurable retry delay"}
+    },
+    {
+      "id": "S02",
+      "kind": "issue",
+      "locator": {
+        "field": "body",
+        "quote": "Add an optional retry_delay argument and apply the configured delay to retries."
+      }
+    },
+    {
+      "id": "S03",
+      "kind": "issue",
+      "locator": {
+        "field": "body",
+        "quote": "Preserve the existing public fallback when retry_delay is omitted."
+      }
+    },
+    {
+      "id": "S04",
+      "kind": "repository",
+      "locator": {
+        "path": "src/client.py",
+        "base_revision": "1111111111111111111111111111111111111111",
+        "line_start": 1,
+        "line_end": 5,
+        "quote": "DEFAULT_RETRY_DELAY = 0.1\n\nclass Client:\n    def __init__(self):\n        self.retry_delay = DEFAULT_RETRY_DELAY",
+        "file_sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      }
+    },
+    {
+      "id": "S05",
+      "kind": "repository",
+      "locator": {
+        "path": "tests/test_client.py",
+        "base_revision": "1111111111111111111111111111111111111111",
+        "line_start": 1,
+        "line_end": 2,
+        "quote": "def test_default_retry_delay():\n    assert Client().retry_delay == DEFAULT_RETRY_DELAY",
+        "file_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      }
+    }
+  ],
+  "obligations": [
+    {
+      "id": "O01",
+      "statement": "Expose and apply the explicit retry delay.",
+      "category": "configuration",
+      "acceptance_criteria": [
+        {
+          "id": "O01.C01",
+          "statement": "Client accepts an optional retry_delay argument and every retry uses an explicitly supplied value.",
+          "criticality": "must",
+          "basis_kind": "explicit_issue",
+          "source_refs": ["S02"],
+          "derivation": "The issue directly requires both the optional input and its propagation.",
+          "open_questions": [],
+          "confidence": "high"
+        },
+        {
+          "id": "O01.C02",
+          "statement": "Calling Client without retry_delay remains valid and uses the existing fallback.",
+          "criticality": "must",
+          "basis_kind": "compatibility_inferred",
+          "source_refs": ["S03", "S04", "S05"],
+          "derivation": "The issue expressly preserves omitted-argument behavior, while the base implementation and public test identify that observable fallback path.",
+          "open_questions": [],
+          "confidence": "high"
+        }
+      ],
+      "affected_surfaces": ["Client.__init__", "retry scheduler"],
+      "dependencies": []
+    },
+    {
+      "id": "O02",
+      "statement": "Retain the public retry_delay inspection surface without inventing a new default.",
+      "category": "backward_compatibility",
+      "acceptance_criteria": [
+        {
+          "id": "O02.C01",
+          "statement": "Client.retry_delay continues to expose the effective configured or fallback delay.",
+          "criticality": "should",
+          "basis_kind": "repository_contract",
+          "source_refs": ["S04", "S05"],
+          "derivation": "The public attribute and its public test establish an observable inspection surface, but the task's core behavior does not depend on the attribute name.",
+          "open_questions": [],
+          "confidence": "medium"
+        },
+        {
+          "id": "O02.C02",
+          "statement": "The fallback delay is exactly 500 milliseconds.",
+          "criticality": "unspecified",
+          "basis_kind": "unspecified",
+          "source_refs": ["S02", "S03", "S04"],
+          "derivation": "The task requires a preserved fallback and explicitly declines to prescribe a new numeric value; 500ms is not authorized.",
+          "open_questions": ["No design decision is required because the frozen base already supplies the preserved fallback."],
+          "confidence": "high"
+        }
+      ],
+      "affected_surfaces": ["Client.retry_delay", "DEFAULT_RETRY_DELAY"],
+      "dependencies": ["O01"]
+    }
+  ]
+}

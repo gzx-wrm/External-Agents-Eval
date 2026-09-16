@@ -7,7 +7,7 @@ def test_hermes_install_uses_pinned_uv_compatible_with_upstream_lockfile():
     install_script = "\n".join(step.run for step in install_spec.steps)
 
     assert "/uv/0.9.28/install.sh" in install_script
-    assert 'uv_bin=/usr/local/bin/uv' in install_script
+    assert "uv_bin=/usr/local/bin/uv" in install_script
     assert '"$uv_bin" --version' in install_script
     assert '"$uv_bin" sync --locked --no-dev' in install_script
     assert "uv-0.9.28" in install_spec.cache_key

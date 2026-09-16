@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/repair_input_v2.schema.json",
+  "title": "RepairInputV2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "issue", "repository", "patch", "review_obligations", "patch_assessment", "effective_review_set", "audit", "policy"],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "issue": {
+      "type": "object", "additionalProperties": false, "required": ["title", "body"],
+      "properties": {"title": {"type": "string", "maxLength": 500}, "body": {"type": "string", "minLength": 1, "maxLength": 100000}}
+    },
+    "repository": {
+      "type": "object", "additionalProperties": false, "required": ["base_commit", "worktree", "state"],
+      "properties": {
+        "base_commit": {"type": "string", "pattern": "^[0-9a-f]{7,64}$"},
+        "worktree": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "state": {"const": "base_plus_p0"}
+      }
+    },
+    "patch": {
+      "type": "object", "additionalProperties": false, "required": ["sha256"],
+      "properties": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+    },
+    "review_obligations": {"$ref": "https://external-agents-eval.local/review_obligations_v2.schema.json"},
+    "patch_assessment": {"$ref": "https://external-agents-eval.local/patch_assessment_v2.schema.json"},
+    "effective_review_set": {"$ref": "https://external-agents-eval.local/effective_review_set_v2.schema.json"},
+    "audit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["required", "path", "schema_path", "assessment_sha256", "effective_review_set_sha256"],
+      "properties": {
+        "required": {"type": "boolean"},
+        "path": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "schema_path": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "assessment_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "effective_review_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_repair_rounds", "hidden_evidence_forbidden", "high_risk_source_check_required", "changes_outside_requests_require_audit"],
+      "properties": {
+        "max_repair_rounds": {"const": 1},
+        "hidden_evidence_forbidden": {"const": true},
+        "high_risk_source_check_required": {"type": "boolean"},
+        "changes_outside_requests_require_audit": {"type": "boolean"}
+      }
+    }
+  }
+}

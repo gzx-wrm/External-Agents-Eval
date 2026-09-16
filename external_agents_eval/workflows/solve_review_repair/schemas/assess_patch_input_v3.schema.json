@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/assess_patch_input_v3.schema.json",
+  "title": "AssessPatchInputV3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "task", "repository", "patch", "obligation_ledger", "source_bindings", "public_test_results"],
+  "properties": {
+    "schema_version": {"const": "3.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "task": {"$ref": "https://external-agents-eval.local/build_obligations_input_v3.schema.json#/$defs/task"},
+    "repository": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "base_commit", "worktree", "state"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 300},
+        "base_commit": {"type": "string", "pattern": "^[0-9a-f]{7,64}$"},
+        "worktree": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "state": {"const": "base_plus_candidate"}
+      }
+    },
+    "patch": {"$ref": "#/$defs/digestedFile"},
+    "obligation_ledger": {"$ref": "#/$defs/digestedFile"},
+    "source_bindings": {"$ref": "#/$defs/digestedFile"},
+    "public_test_results": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/publicTestResult"}}
+  },
+  "$defs": {
+    "digestedFile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "publicTestResult": {
+      "type": "object", "additionalProperties": false,
+      "required": ["command", "result"],
+      "properties": {
+        "command": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "result": {"enum": ["passed", "failed", "timed_out"]},
+        "exit_code": {"type": ["integer", "null"]},
+        "output_path": {"type": ["string", "null"], "maxLength": 4096},
+        "duration_sec": {"type": ["number", "null"], "minimum": 0}
+      }
+    }
+  }
+}

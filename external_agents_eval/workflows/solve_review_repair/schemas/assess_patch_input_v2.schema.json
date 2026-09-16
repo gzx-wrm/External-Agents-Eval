@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/assess_patch_input_v2.schema.json",
+  "title": "AssessPatchInputV2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "issue", "repository", "patch", "obligation_ledger", "source_policy", "public_test_results"],
+  "properties": {
+    "schema_version": {"const": "2.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "issue": {"$ref": "#/$defs/issue"},
+    "repository": {"$ref": "#/$defs/repository"},
+    "patch": {"$ref": "#/$defs/digestedFile"},
+    "obligation_ledger": {"$ref": "#/$defs/digestedFile"},
+    "source_policy": {"$ref": "#/$defs/digestedFile"},
+    "public_test_results": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/publicTestResult"}}
+  },
+  "$defs": {
+    "issue": {
+      "type": "object", "additionalProperties": false, "required": ["title", "body"],
+      "properties": {"title": {"type": "string", "maxLength": 500}, "body": {"type": "string", "minLength": 1, "maxLength": 100000}}
+    },
+    "repository": {
+      "type": "object", "additionalProperties": false, "required": ["name", "base_commit", "worktree", "state"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 300},
+        "base_commit": {"type": "string", "pattern": "^[0-9a-f]{7,64}$"},
+        "worktree": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "state": {"const": "base_plus_p0"}
+      }
+    },
+    "digestedFile": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1, "maxLength": 4096}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+    },
+    "publicTestResult": {
+      "type": "object", "additionalProperties": false, "required": ["command", "result"],
+      "properties": {
+        "command": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "result": {"enum": ["passed", "failed", "timed_out"]},
+        "exit_code": {"type": ["integer", "null"]},
+        "output_path": {"type": ["string", "null"], "maxLength": 4096},
+        "duration_sec": {"type": ["number", "null"], "minimum": 0}
+      }
+    }
+  }
+}

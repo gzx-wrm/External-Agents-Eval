@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/build_obligations_input.schema.json",
+  "title": "BuildObligationsInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "issue", "repository", "policy"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "issue": {"$ref": "#/$defs/issue"},
+    "repository": {"$ref": "#/$defs/repository"},
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_obligations", "allowed_origin_types", "forbid_patch_access", "forbid_hidden_evidence"],
+      "properties": {
+        "max_obligations": {"const": 32},
+        "allowed_origin_types": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {"enum": ["explicit_issue", "compatibility_inferred", "repository_contract"]}
+        },
+        "forbid_patch_access": {"const": true},
+        "forbid_hidden_evidence": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "body"],
+      "properties": {
+        "title": {"type": "string", "maxLength": 500},
+        "body": {"type": "string", "minLength": 1, "maxLength": 100000}
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "base_commit", "worktree", "state"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 300},
+        "base_commit": {"type": "string", "pattern": "^[0-9a-f]{7,64}$"},
+        "worktree": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "state": {"const": "base_only"}
+      }
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/repair_audit_v3.schema.json",
+  "title": "RepairAuditV3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "candidate_patch_sha256", "assessment_sha256", "effective_review_set_sha256", "changed_paths", "changes", "unaddressed_requests", "validation_summary"],
+  "properties": {
+    "schema_version": {"const": "3.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "candidate_patch_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "assessment_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "effective_review_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "changed_paths": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/repoPath"}},
+    "changes": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/change"}},
+    "unaddressed_requests": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/unaddressed"}},
+    "validation_summary": {"type": "string", "minLength": 1, "maxLength": 4000}
+  },
+  "$defs": {
+    "repoPath": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"},
+    "validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["command", "result", "expected", "actual", "log_path"],
+      "properties": {
+        "command": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "result": {"enum": ["passed", "failed", "not_run"]},
+        "expected": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "actual": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "log_path": {"type": ["string", "null"], "maxLength": 4096}
+      }
+    },
+    "change": {
+      "type": "object", "additionalProperties": false,
+      "required": ["change_id", "request_refs", "finding_refs", "decision", "before_behavior", "after_behavior", "preserve", "out_of_request_scope", "scope_rationale", "changed_paths", "validation"],
+      "properties": {
+        "change_id": {"type": "string", "pattern": "^C[0-9]{2,3}$"},
+        "request_refs": {"type": "array", "maxItems": 3, "uniqueItems": true, "items": {"type": "string", "pattern": "^Q[0-9]{2}$"}},
+        "finding_refs": {"type": "array", "maxItems": 24, "uniqueItems": true, "items": {"type": "string", "pattern": "^(?:O|L|R)[0-9]{2,3}$"}},
+        "decision": {"enum": ["implement", "no_change", "defer", "reject"]},
+        "before_behavior": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "after_behavior": {"type": "string", "minLength": 1, "maxLength": 3000},
+        "preserve": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 2000}},
+        "out_of_request_scope": {"type": "boolean"},
+        "scope_rationale": {"type": ["string", "null"], "maxLength": 3000},
+        "changed_paths": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/repoPath"}},
+        "validation": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/validation"}}
+      }
+    },
+    "unaddressed": {
+      "type": "object", "additionalProperties": false,
+      "required": ["request_ref", "reason"],
+      "properties": {
+        "request_ref": {"type": "string", "pattern": "^Q[0-9]{2}$"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 3000}
+      }
+    }
+  }
+}

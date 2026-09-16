@@ -1,0 +1,18 @@
+{
+  "schema_version": "2.0",
+  "task_id": "synthetic-all-public-types",
+  "issue": {
+    "title": "Round-trip every public shape",
+    "body": "All public Shape implementations must encode and decode without losing their observable fields. Unknown non-public type tags must continue to be rejected."
+  },
+  "repository": {
+    "name": "synthetic/shape-codec",
+    "base_commit": "2222222222222222222222222222222222222222",
+    "worktree": "/synthetic/shape-codec",
+    "state": "base_only"
+  },
+  "source_policy": {
+    "path": "/contracts/source_policy.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}

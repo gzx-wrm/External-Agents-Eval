@@ -1,0 +1,8 @@
+{
+  "task_id": "synthetic-format-codec",
+  "example_scope": "Synthetic continuation of the matching Stage A ledger; observations describe a fictional repository.",
+  "task_requirement": "Include the selected version in every encoded payload.",
+  "candidate_excerpt": "src/codec.py\n1: import json\n2: DEFAULT_VERSION = 1\n28: def encode(value, format_version=DEFAULT_VERSION):\n29:     return json.dumps({'version': DEFAULT_VERSION, 'value': value}).encode()\n42: def decode(payload):\n43:     return json.loads(payload)['value']",
+  "candidate_validation": "python -m pytest tests/test_codec.py -k default passed. No non-default execution is recorded.",
+  "review_focus": "Derive a distinguishing public call from the task before assigning coverage. The observed JSON framing is not a required design."
+}

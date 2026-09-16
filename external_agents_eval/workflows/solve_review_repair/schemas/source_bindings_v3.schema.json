@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/source_bindings_v3.schema.json",
+  "title": "SourceBindingsV3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "base_commit", "sources"],
+  "properties": {
+    "schema_version": {"const": "3.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "base_commit": {"type": "string", "pattern": "^[0-9a-f]{7,64}$"},
+    "sources": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/boundSource"}}
+  },
+  "$defs": {
+    "repoPath": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"},
+    "boundSource": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["id", "kind", "field", "quote"],
+          "properties": {
+            "id": {"type": "string", "pattern": "^(?:S|A)[0-9]{2,3}$"},
+            "kind": {"const": "task"},
+            "field": {"enum": ["title", "description"]},
+            "quote": {"type": "string", "minLength": 1, "maxLength": 100000}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["id", "kind", "path", "line_start", "line_end", "quote", "base_revision", "file_sha256"],
+          "properties": {
+            "id": {"type": "string", "pattern": "^(?:S|A)[0-9]{2,3}$"},
+            "kind": {"const": "repository"},
+            "path": {"$ref": "#/$defs/repoPath"},
+            "line_start": {"type": "integer", "minimum": 1},
+            "line_end": {"type": "integer", "minimum": 1},
+            "quote": {"type": "string", "minLength": 1, "maxLength": 100000},
+            "base_revision": {"type": "string", "pattern": "^[0-9a-f]{7,64}$"},
+            "file_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          }
+        }
+      ]
+    }
+  }
+}

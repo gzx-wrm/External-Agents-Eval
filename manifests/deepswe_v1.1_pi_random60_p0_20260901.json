@@ -1,0 +1,572 @@
+{
+  "schema_version": "1.0",
+  "experiment": "specification-reviewer-repair-once",
+  "benchmark": "deepswe",
+  "benchmark_revision": "1.1",
+  "benchmark_source_commit": "0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea",
+  "source_job": {
+    "id": "5b8480f5-9f18-414a-aa53-a17aff716c9b",
+    "path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup",
+    "run_record_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup.run.json",
+    "run_record_sha256": "d9fff0ed1e2d9da3f67e5edf50c3c8af4e82e30b06e2dbe82dd2f75540231d1a"
+  },
+  "source_manifest": {
+    "path": "/Users/gzx/code/python/external_agents_eval/external_agents_eval/benchmarks/deepswe/data/deepswe_v1.1_random60_seed20260901.json",
+    "sha256": "1e83f8d4f1ef155a1adad4b8cfb6d796c1457d65a65111624b07f04aca737ecf"
+  },
+  "development_task_ids": [
+    "abs-stepped-slices",
+    "effect-sse-httpapi-streaming"
+  ],
+  "task_ids": [
+    "sqlite-utils-safe-import-checkpoints",
+    "kombu-virtual-queue-dead-lettering",
+    "cliffy-config-file-parsing",
+    "meriyah-explicit-resource-declarations",
+    "ts-pattern-match-each",
+    "sql-formatter-bigquery-pipe-formatting",
+    "fastapi-deprecation-response-headers",
+    "bandit-interprocedural-taint-checks",
+    "ink-grid-box-layout",
+    "aiomonitor-task-snapshots-diff",
+    "opa-template-string-reconstruction",
+    "happy-dom-deterministic-intersectionobserver",
+    "fd-deterministic-multi-key-sorting",
+    "adaptix-name-mapping-aliases",
+    "textual-kitty-key-phases",
+    "dynamodb-toolbox-lazy-recursive-schemas",
+    "returns-validated-error-accumulation",
+    "psd-tools-blend-range-api",
+    "task-task-graph-export",
+    "kombu-single-active-consumer-priority",
+    "clack-async-autocomplete-options",
+    "geo-shapeindex-serialization",
+    "dateutil-rfc5545-timezone-interop",
+    "tomlkit-toml-table-converters",
+    "optique-conditional-option-dependencies",
+    "koota-pair-relation-tracking",
+    "yaegi-go-embed-directives",
+    "dasel-html-document-format",
+    "httpx-deterministic-cookie-store",
+    "obsidian-linter-auto-table-of-contents",
+    "testem-bail-on-test-failure",
+    "drizzle-orm-window-function-builders",
+    "numba-stencil-boundary-modes",
+    "gql-incremental-graphql-delivery",
+    "langchain-request-coalescing",
+    "vulture-persistent-analysis-cache",
+    "query-persist-restored-query-state",
+    "boa-hierarchical-evaluation-cancellation",
+    "termenv-preserve-ansi-resets",
+    "cattrs-partial-structuring-recovery",
+    "effect-sse-httpapi-streaming",
+    "yjs-map-conflict-detection",
+    "updo-policy-alerting",
+    "obsidian-linter-link-format-conversion",
+    "quill-shared-toolbar-focus",
+    "sqlfmt-create-table-ddl-formatting",
+    "expr-try-catch-errors",
+    "tengo-callable-instance-isolation",
+    "claude-code-by-agents-recursive-delegation",
+    "ytt-jsonpath-query-api",
+    "mobly-grouped-test-barriers",
+    "abs-stepped-slices",
+    "anko-default-function-arguments",
+    "testem-per-launcher-reports",
+    "fastapi-implicit-head-options",
+    "wazero-multi-module-snapshots",
+    "anko-typed-variable-bindings",
+    "arktype-json-schema-refs-dependencies",
+    "valibot-recursive-schema-composition",
+    "scriggo-method-declarations"
+  ],
+  "task_count": 60,
+  "metric_task_ids": [
+    "sqlite-utils-safe-import-checkpoints",
+    "kombu-virtual-queue-dead-lettering",
+    "cliffy-config-file-parsing",
+    "meriyah-explicit-resource-declarations",
+    "ts-pattern-match-each",
+    "sql-formatter-bigquery-pipe-formatting",
+    "fastapi-deprecation-response-headers",
+    "bandit-interprocedural-taint-checks",
+    "ink-grid-box-layout",
+    "aiomonitor-task-snapshots-diff",
+    "opa-template-string-reconstruction",
+    "happy-dom-deterministic-intersectionobserver",
+    "fd-deterministic-multi-key-sorting",
+    "adaptix-name-mapping-aliases",
+    "textual-kitty-key-phases",
+    "dynamodb-toolbox-lazy-recursive-schemas",
+    "returns-validated-error-accumulation",
+    "psd-tools-blend-range-api",
+    "task-task-graph-export",
+    "kombu-single-active-consumer-priority",
+    "clack-async-autocomplete-options",
+    "geo-shapeindex-serialization",
+    "dateutil-rfc5545-timezone-interop",
+    "tomlkit-toml-table-converters",
+    "optique-conditional-option-dependencies",
+    "koota-pair-relation-tracking",
+    "yaegi-go-embed-directives",
+    "dasel-html-document-format",
+    "httpx-deterministic-cookie-store",
+    "obsidian-linter-auto-table-of-contents",
+    "testem-bail-on-test-failure",
+    "drizzle-orm-window-function-builders",
+    "numba-stencil-boundary-modes",
+    "gql-incremental-graphql-delivery",
+    "langchain-request-coalescing",
+    "vulture-persistent-analysis-cache",
+    "query-persist-restored-query-state",
+    "boa-hierarchical-evaluation-cancellation",
+    "termenv-preserve-ansi-resets",
+    "cattrs-partial-structuring-recovery",
+    "yjs-map-conflict-detection",
+    "updo-policy-alerting",
+    "obsidian-linter-link-format-conversion",
+    "quill-shared-toolbar-focus",
+    "sqlfmt-create-table-ddl-formatting",
+    "expr-try-catch-errors",
+    "tengo-callable-instance-isolation",
+    "claude-code-by-agents-recursive-delegation",
+    "ytt-jsonpath-query-api",
+    "mobly-grouped-test-barriers",
+    "anko-default-function-arguments",
+    "testem-per-launcher-reports",
+    "fastapi-implicit-head-options",
+    "wazero-multi-module-snapshots",
+    "anko-typed-variable-bindings",
+    "arktype-json-schema-refs-dependencies",
+    "valibot-recursive-schema-composition",
+    "scriggo-method-declarations"
+  ],
+  "metric_task_count": 58,
+  "excluded_task_ids": [
+    "effect-sse-httpapi-streaming",
+    "abs-stepped-slices"
+  ],
+  "selection_method": "source-manifest-all-tasks-with-development-exclusions-v1",
+  "tasks": {
+    "sqlite-utils-safe-import-checkpoints": {
+      "source_trial_id": "sqlite-utils-safe-import-checkpo__R77PEW5",
+      "base_commit": "8d74ffc93292c604d5827e2b44fffedca0c28c19",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/sqlite-utils-safe-import-checkpo__R77PEW5/artifacts/model.patch",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "kombu-virtual-queue-dead-lettering": {
+      "source_trial_id": "kombu-virtual-queue-dead-letteri__93wqkmK",
+      "base_commit": "3c5c1bd86376ee73d52a4cc770bdaeab15bbc2f3",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/kombu-virtual-queue-dead-letteri__93wqkmK/artifacts/model.patch",
+      "patch_sha256": "076d3dd1b81c5be12f0cf5b605963840ccc24a8bd847fd9b3f6ea8c22b3ca71a",
+      "tracked_diff_sha256": "076d3dd1b81c5be12f0cf5b605963840ccc24a8bd847fd9b3f6ea8c22b3ca71a"
+    },
+    "cliffy-config-file-parsing": {
+      "source_trial_id": "cliffy-config-file-parsing__xBuPe23",
+      "base_commit": "132a437c40cffbdfbe474ca808c8debde59e2633",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/cliffy-config-file-parsing__xBuPe23/artifacts/model.patch",
+      "patch_sha256": "af91ab489a689a8b0fd9dcd3e375de07b189dc31badf9e1e665f4c6d6a648bb6",
+      "tracked_diff_sha256": "af91ab489a689a8b0fd9dcd3e375de07b189dc31badf9e1e665f4c6d6a648bb6"
+    },
+    "meriyah-explicit-resource-declarations": {
+      "source_trial_id": "meriyah-explicit-resource-declar__Xe6aPpG",
+      "base_commit": "d141eb14a40b79c04d1b1db5c20c6afa3844c0d9",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/meriyah-explicit-resource-declar__Xe6aPpG/artifacts/model.patch",
+      "patch_sha256": "8f0e29489a6f3c12ed5522de5513f63a859ec93a685272149ebca1eea1ed9fb3",
+      "tracked_diff_sha256": "8f0e29489a6f3c12ed5522de5513f63a859ec93a685272149ebca1eea1ed9fb3"
+    },
+    "ts-pattern-match-each": {
+      "source_trial_id": "ts-pattern-match-each__Nxb9CAR",
+      "base_commit": "f66fc061fde4f764b113ededa09be63dae564159",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/ts-pattern-match-each__Nxb9CAR/artifacts/model.patch",
+      "patch_sha256": "cae85d159319e07c43331c068ed08f15391f9f6fdd18756408bd403ee30f5180",
+      "tracked_diff_sha256": "cae85d159319e07c43331c068ed08f15391f9f6fdd18756408bd403ee30f5180"
+    },
+    "sql-formatter-bigquery-pipe-formatting": {
+      "source_trial_id": "sql-formatter-bigquery-pipe-form__rEh8paE",
+      "base_commit": "954e5a474b9e3d45ca58f02a3a4eac8e1947acc5",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/sql-formatter-bigquery-pipe-form__rEh8paE/artifacts/model.patch",
+      "patch_sha256": "91f71789be7e01f3f42cffd20b48ada916559e410f59d32bcacc008f4efabeed",
+      "tracked_diff_sha256": "91f71789be7e01f3f42cffd20b48ada916559e410f59d32bcacc008f4efabeed"
+    },
+    "fastapi-deprecation-response-headers": {
+      "source_trial_id": "fastapi-deprecation-response-hea__eBjwQps",
+      "base_commit": "11614be9021aa4ac078d4d0693a8b5250a1010d8",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/fastapi-deprecation-response-hea__eBjwQps/artifacts/model.patch",
+      "patch_sha256": "d6f55bdd69a4cc759999def80c5ab1814a38bf9e8443bc20b1bb0bb4ecf6d600",
+      "tracked_diff_sha256": "d6f55bdd69a4cc759999def80c5ab1814a38bf9e8443bc20b1bb0bb4ecf6d600"
+    },
+    "bandit-interprocedural-taint-checks": {
+      "source_trial_id": "bandit-interprocedural-taint-che__hmp7ND9",
+      "base_commit": "b46fa3a2723635aa29cc012538df4867ac2ac006",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/bandit-interprocedural-taint-che__hmp7ND9/artifacts/model.patch",
+      "patch_sha256": "c90f0892b9451c7ba0e7b0dbf50877428adbe00b8cdc949525cdd65bb5d04ac5",
+      "tracked_diff_sha256": "c90f0892b9451c7ba0e7b0dbf50877428adbe00b8cdc949525cdd65bb5d04ac5"
+    },
+    "ink-grid-box-layout": {
+      "source_trial_id": "ink-grid-box-layout__jUYYkWF",
+      "base_commit": "0cea59169ef0f3f83e4aa7fbedbff9d165646472",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/ink-grid-box-layout__jUYYkWF/artifacts/model.patch",
+      "patch_sha256": "f077c58a27d9d6faa114e98e84497899a5db84a9812d067a61853be2a8c4a417",
+      "tracked_diff_sha256": "f077c58a27d9d6faa114e98e84497899a5db84a9812d067a61853be2a8c4a417"
+    },
+    "aiomonitor-task-snapshots-diff": {
+      "source_trial_id": "aiomonitor-task-snapshots-diff__jJMtyK6",
+      "base_commit": "b73fea2e0682803bda7531c93cd1dfb360839175",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/aiomonitor-task-snapshots-diff__jJMtyK6/artifacts/model.patch",
+      "patch_sha256": "44ae2ba4da6957619ce2e672b1de111f20fb3a2667a85a75fc69dac9e51b9741",
+      "tracked_diff_sha256": "44ae2ba4da6957619ce2e672b1de111f20fb3a2667a85a75fc69dac9e51b9741"
+    },
+    "opa-template-string-reconstruction": {
+      "source_trial_id": "opa-template-string-reconstructi__jaoqwwA",
+      "base_commit": "1ac64ef1a57a531c2723c59848890b88e816d777",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/opa-template-string-reconstructi__jaoqwwA/artifacts/model.patch",
+      "patch_sha256": "ffa6a561d285e39e540eae44301e8df913cf00823b7fd32a62ada0698022f100",
+      "tracked_diff_sha256": "ffa6a561d285e39e540eae44301e8df913cf00823b7fd32a62ada0698022f100"
+    },
+    "happy-dom-deterministic-intersectionobserver": {
+      "source_trial_id": "happy-dom-deterministic-intersec__4RNopoW",
+      "base_commit": "82a0888cb2c87a6123e05424b528f8e8c9b3e426",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/happy-dom-deterministic-intersec__4RNopoW/artifacts/model.patch",
+      "patch_sha256": "fbcad5e4556be02495da16487eb3982037848fb40734ac906baede42805737fe",
+      "tracked_diff_sha256": "fbcad5e4556be02495da16487eb3982037848fb40734ac906baede42805737fe"
+    },
+    "fd-deterministic-multi-key-sorting": {
+      "source_trial_id": "fd-deterministic-multi-key-sorti__RZqvyBp",
+      "base_commit": "227883606023d62275fb48701aeac90f2b604143",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/fd-deterministic-multi-key-sorti__RZqvyBp/artifacts/model.patch",
+      "patch_sha256": "f2e94b71d53b2e55e50cc17ca23512a151be253c2ac706793fe99803fe2f6794",
+      "tracked_diff_sha256": "f2e94b71d53b2e55e50cc17ca23512a151be253c2ac706793fe99803fe2f6794"
+    },
+    "adaptix-name-mapping-aliases": {
+      "source_trial_id": "adaptix-name-mapping-aliases__fKqnuXW",
+      "base_commit": "a691069fcadf9131e5f7a5a130a022dc678f3e1d",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/adaptix-name-mapping-aliases__fKqnuXW/artifacts/model.patch",
+      "patch_sha256": "88a5b48bbd5d3bc94ae96876af32f88862b164199b8441311dd8dfdc28f14d5f",
+      "tracked_diff_sha256": "88a5b48bbd5d3bc94ae96876af32f88862b164199b8441311dd8dfdc28f14d5f"
+    },
+    "textual-kitty-key-phases": {
+      "source_trial_id": "textual-kitty-key-phases__7jdqRVx",
+      "base_commit": "9737a5ab723f79e59f0a83eb036a3d15fad6b054",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/textual-kitty-key-phases__7jdqRVx/artifacts/model.patch",
+      "patch_sha256": "c5b4686b221fd273cd3560239798c8f55f3576273e9ff7e1120b273bc7921503",
+      "tracked_diff_sha256": "c5b4686b221fd273cd3560239798c8f55f3576273e9ff7e1120b273bc7921503"
+    },
+    "dynamodb-toolbox-lazy-recursive-schemas": {
+      "source_trial_id": "dynamodb-toolbox-lazy-recursive__T3GxnVz",
+      "base_commit": "1f2a18664f8aded292707fcafb01ff15ea33d3b8",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/dynamodb-toolbox-lazy-recursive__T3GxnVz/artifacts/model.patch",
+      "patch_sha256": "88f0872d74eb85e00c253a1f22deb52b211bc12d2008893324dbd5cb53fb61c6",
+      "tracked_diff_sha256": "88f0872d74eb85e00c253a1f22deb52b211bc12d2008893324dbd5cb53fb61c6"
+    },
+    "returns-validated-error-accumulation": {
+      "source_trial_id": "returns-validated-error-accumula__TfzTmXx",
+      "base_commit": "41607fae1289de2787523c452d75212206b9c7c0",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/returns-validated-error-accumula__TfzTmXx/artifacts/model.patch",
+      "patch_sha256": "9ac1b502f4356390da16e04bfa48bc94456d0422dc36bece8d976b717717cad2",
+      "tracked_diff_sha256": "9ac1b502f4356390da16e04bfa48bc94456d0422dc36bece8d976b717717cad2"
+    },
+    "psd-tools-blend-range-api": {
+      "source_trial_id": "psd-tools-blend-range-api__uibQk9D",
+      "base_commit": "c5e03189188daa3c5589326a9d74506d7dc48bc9",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/psd-tools-blend-range-api__uibQk9D/artifacts/model.patch",
+      "patch_sha256": "0cdff5f4b0764f8585d8fa8184196e8a9c41bbb5e800d90a20c6badeeb752e36",
+      "tracked_diff_sha256": "0cdff5f4b0764f8585d8fa8184196e8a9c41bbb5e800d90a20c6badeeb752e36"
+    },
+    "task-task-graph-export": {
+      "source_trial_id": "task-task-graph-export__t7ap2Cy",
+      "base_commit": "54bdcba369357b47e19066b57badfb216a4c8d95",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/task-task-graph-export__t7ap2Cy/artifacts/model.patch",
+      "patch_sha256": "dd7b72a44f63a85b393c6cddd01a11fe7368eab8566a50f9f5f7dea40205d006",
+      "tracked_diff_sha256": "dd7b72a44f63a85b393c6cddd01a11fe7368eab8566a50f9f5f7dea40205d006"
+    },
+    "kombu-single-active-consumer-priority": {
+      "source_trial_id": "kombu-single-active-consumer-pri__LLhSS2m",
+      "base_commit": "3c5c1bd86376ee73d52a4cc770bdaeab15bbc2f3",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/kombu-single-active-consumer-pri__LLhSS2m/artifacts/model.patch",
+      "patch_sha256": "fe85e6d8af782b9c6c001ca9fac8986702f7963971f6c908a1a9b801f43f3088",
+      "tracked_diff_sha256": "fe85e6d8af782b9c6c001ca9fac8986702f7963971f6c908a1a9b801f43f3088"
+    },
+    "clack-async-autocomplete-options": {
+      "source_trial_id": "clack-async-autocomplete-options__pkmiNQ4",
+      "base_commit": "8a96e2dcd7f821d1250b58cf71c327679f94de25",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/clack-async-autocomplete-options__pkmiNQ4/artifacts/model.patch",
+      "patch_sha256": "68df803ae1f49751327f8f3d3c4966b409c7dbc419e909bda395565942cd2573",
+      "tracked_diff_sha256": "68df803ae1f49751327f8f3d3c4966b409c7dbc419e909bda395565942cd2573"
+    },
+    "geo-shapeindex-serialization": {
+      "source_trial_id": "geo-shapeindex-serialization__8RrhFdv",
+      "base_commit": "87f5a40ea07a4ea629ee5623c72660f3d1b217fa",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/geo-shapeindex-serialization__8RrhFdv/artifacts/model.patch",
+      "patch_sha256": "5b67f0075a2cab1577b1c694ea4942b11eef224e4c13fc80f367ac2b215e7050",
+      "tracked_diff_sha256": "5b67f0075a2cab1577b1c694ea4942b11eef224e4c13fc80f367ac2b215e7050"
+    },
+    "dateutil-rfc5545-timezone-interop": {
+      "source_trial_id": "dateutil-rfc5545-timezone-intero__7V2zfbf",
+      "base_commit": "c981f9c7aa91b83cc9bd33a09ecee9e751b06e8d",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/dateutil-rfc5545-timezone-intero__7V2zfbf/artifacts/model.patch",
+      "patch_sha256": "8ccb2f833e68a16e81bf8b172e9f876f27ceae370959c62610bc2625594f57c5",
+      "tracked_diff_sha256": "8ccb2f833e68a16e81bf8b172e9f876f27ceae370959c62610bc2625594f57c5"
+    },
+    "tomlkit-toml-table-converters": {
+      "source_trial_id": "tomlkit-toml-table-converters__NqkeJQ9",
+      "base_commit": "dd05eebc8ed9e30fc6c223088a5a450cb54c1cab",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/tomlkit-toml-table-converters__NqkeJQ9/artifacts/model.patch",
+      "patch_sha256": "719cef5dbc328c65380dc09efc5f5cb8a2eaace88d289ccaf6b90a8009381c65",
+      "tracked_diff_sha256": "719cef5dbc328c65380dc09efc5f5cb8a2eaace88d289ccaf6b90a8009381c65"
+    },
+    "optique-conditional-option-dependencies": {
+      "source_trial_id": "optique-conditional-option-depen__wreoehD",
+      "base_commit": "14bbe4efc7ded67932771b9ca18d9d637bb4cf27",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/optique-conditional-option-depen__wreoehD/artifacts/model.patch",
+      "patch_sha256": "69d213a0d6fb26007837dc49920ce716fde81dab8e6ed5c1587542ebd51cab21",
+      "tracked_diff_sha256": "69d213a0d6fb26007837dc49920ce716fde81dab8e6ed5c1587542ebd51cab21"
+    },
+    "koota-pair-relation-tracking": {
+      "source_trial_id": "koota-pair-relation-tracking__wWP5o9B",
+      "base_commit": "9c434858b2b522002f8c5eb4a554fa8836a7cf3c",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/koota-pair-relation-tracking__wWP5o9B/artifacts/model.patch",
+      "patch_sha256": "2c69ea5395c3f665d496c83c5283174099840cca9b0ae6d9c79d853ebc4fa507",
+      "tracked_diff_sha256": "2c69ea5395c3f665d496c83c5283174099840cca9b0ae6d9c79d853ebc4fa507"
+    },
+    "yaegi-go-embed-directives": {
+      "source_trial_id": "yaegi-go-embed-directives__tffw6Pr",
+      "base_commit": "fcb76d1ece0c3edc2548c39aa5b170475d2261bb",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/yaegi-go-embed-directives__tffw6Pr/artifacts/model.patch",
+      "patch_sha256": "cfd72f17907712d2cd860218393e38eb4c750252ddefde40fed1f543520e96bd",
+      "tracked_diff_sha256": "cfd72f17907712d2cd860218393e38eb4c750252ddefde40fed1f543520e96bd"
+    },
+    "dasel-html-document-format": {
+      "source_trial_id": "dasel-html-document-format__pFfqS5z",
+      "base_commit": "0dd6132e0c58edbd9b1a5f7ffd00dfab1e6085ad",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/dasel-html-document-format__pFfqS5z/artifacts/model.patch",
+      "patch_sha256": "3db5a43abef47ffc165b78e7bc290b1a93c5687a0e69e85170b26867f47bd13c",
+      "tracked_diff_sha256": "3db5a43abef47ffc165b78e7bc290b1a93c5687a0e69e85170b26867f47bd13c"
+    },
+    "httpx-deterministic-cookie-store": {
+      "source_trial_id": "httpx-deterministic-cookie-store__azEi6QR",
+      "base_commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/httpx-deterministic-cookie-store__azEi6QR/artifacts/model.patch",
+      "patch_sha256": "b8476cc7ed82cbb49798c40173f5c488565727a429e5d7c1b82661ea1013acea",
+      "tracked_diff_sha256": "b8476cc7ed82cbb49798c40173f5c488565727a429e5d7c1b82661ea1013acea"
+    },
+    "obsidian-linter-auto-table-of-contents": {
+      "source_trial_id": "obsidian-linter-auto-table-of-co__UoXeT3X",
+      "base_commit": "6393b3ab32a2ace1fc24d4b0f5e0f13a179c874f",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/obsidian-linter-auto-table-of-co__UoXeT3X/artifacts/model.patch",
+      "patch_sha256": "f6dd2af0a433de7568aa2cb69e79c2b0e136f92d41383422c2c9871977980e0a",
+      "tracked_diff_sha256": "f6dd2af0a433de7568aa2cb69e79c2b0e136f92d41383422c2c9871977980e0a"
+    },
+    "testem-bail-on-test-failure": {
+      "source_trial_id": "testem-bail-on-test-failure__NTucSYy",
+      "base_commit": "06a1adb7a70e85e7322d8cfae3181508785de95d",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/testem-bail-on-test-failure__NTucSYy/artifacts/model.patch",
+      "patch_sha256": "9587545b5297e4bd6aba3195665b474fea027a3bac786f0cf3c5077d73888df4",
+      "tracked_diff_sha256": "9587545b5297e4bd6aba3195665b474fea027a3bac786f0cf3c5077d73888df4"
+    },
+    "drizzle-orm-window-function-builders": {
+      "source_trial_id": "drizzle-orm-window-function-buil__EQK3HHo",
+      "base_commit": "e8e6edfef5ca69c6188d320388ad440265911057",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/drizzle-orm-window-function-buil__EQK3HHo/artifacts/model.patch",
+      "patch_sha256": "21cb110fbd33a62a55a77dc1b1d3d22bfebf4cf0f68fa600dfc30f6cdc70e1bf",
+      "tracked_diff_sha256": "21cb110fbd33a62a55a77dc1b1d3d22bfebf4cf0f68fa600dfc30f6cdc70e1bf"
+    },
+    "numba-stencil-boundary-modes": {
+      "source_trial_id": "numba-stencil-boundary-modes__HHKoLHo",
+      "base_commit": "5781334aa654972fdc749003e7c1e93e6d277110",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/numba-stencil-boundary-modes__HHKoLHo/artifacts/model.patch",
+      "patch_sha256": "b33870b15e0126a4d246b489541cf42375c5fb7a8e4f59fab2ea0da832c23cf7",
+      "tracked_diff_sha256": "b33870b15e0126a4d246b489541cf42375c5fb7a8e4f59fab2ea0da832c23cf7"
+    },
+    "gql-incremental-graphql-delivery": {
+      "source_trial_id": "gql-incremental-graphql-delivery__2ExuQTJ",
+      "base_commit": "f07c89f8f065010a36b4263eded209b2b1d37063",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/gql-incremental-graphql-delivery__2ExuQTJ/artifacts/model.patch",
+      "patch_sha256": "32aecfed45fcbb4b2c1232e0a87389a71716c63c69c80bb6f10f021ecf3a4ebc",
+      "tracked_diff_sha256": "32aecfed45fcbb4b2c1232e0a87389a71716c63c69c80bb6f10f021ecf3a4ebc"
+    },
+    "langchain-request-coalescing": {
+      "source_trial_id": "langchain-request-coalescing__bKY25SB",
+      "base_commit": "7cef35b",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/langchain-request-coalescing__bKY25SB/artifacts/model.patch",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "vulture-persistent-analysis-cache": {
+      "source_trial_id": "vulture-persistent-analysis-cach__hHwu5rS",
+      "base_commit": "1eb212f0a0707ad6f4c720bb2010c2b7517cf0f9",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/vulture-persistent-analysis-cach__hHwu5rS/artifacts/model.patch",
+      "patch_sha256": "044889fc9c724baf214e3ea8ec61c7f3ce0ed07ccf7ec0f58c7896e930f57683",
+      "tracked_diff_sha256": "044889fc9c724baf214e3ea8ec61c7f3ce0ed07ccf7ec0f58c7896e930f57683"
+    },
+    "query-persist-restored-query-state": {
+      "source_trial_id": "query-persist-restored-query-sta__iL9QmLN",
+      "base_commit": "1047cdc393fac7c98822c993d70c28f58833c63d",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/query-persist-restored-query-sta__iL9QmLN/artifacts/model.patch",
+      "patch_sha256": "bc2e74d6343714da0053b777fa65336a9a2ca5e180a6be8544599459c647e3f8",
+      "tracked_diff_sha256": "bc2e74d6343714da0053b777fa65336a9a2ca5e180a6be8544599459c647e3f8"
+    },
+    "boa-hierarchical-evaluation-cancellation": {
+      "source_trial_id": "boa-hierarchical-evaluation-canc__PiPdyNJ",
+      "base_commit": "70409a5052984325dccfdc5f6520818568a81f39",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/boa-hierarchical-evaluation-canc__PiPdyNJ/artifacts/model.patch",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "termenv-preserve-ansi-resets": {
+      "source_trial_id": "termenv-preserve-ansi-resets__8DzQpiR",
+      "base_commit": "368a3572b8146cc038b3f240da6792003d7e42c5",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/termenv-preserve-ansi-resets__8DzQpiR/artifacts/model.patch",
+      "patch_sha256": "aecaa1d440030242aa005440c0ff797653217f902b2f29c7d7b65efa23529324",
+      "tracked_diff_sha256": "aecaa1d440030242aa005440c0ff797653217f902b2f29c7d7b65efa23529324"
+    },
+    "cattrs-partial-structuring-recovery": {
+      "source_trial_id": "cattrs-partial-structuring-recov__9hR4SEt",
+      "base_commit": "6bc4708fb9b2ac52d9a18997e923da6a58916102",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/cattrs-partial-structuring-recov__9hR4SEt/artifacts/model.patch",
+      "patch_sha256": "009fbee2cb4a691795f18e200484671e3682e5c19000575fcd5519a68477af30",
+      "tracked_diff_sha256": "009fbee2cb4a691795f18e200484671e3682e5c19000575fcd5519a68477af30"
+    },
+    "effect-sse-httpapi-streaming": {
+      "source_trial_id": "effect-sse-httpapi-streaming__KKoJkiV",
+      "base_commit": "9245bc59ebfa688e8c92dd691296ee69d0815e59",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/effect-sse-httpapi-streaming__KKoJkiV/artifacts/model.patch",
+      "patch_sha256": "988f22a5d858643fbb1426abde9749af82606b0461d90b942ff15d4edcf39901",
+      "tracked_diff_sha256": "988f22a5d858643fbb1426abde9749af82606b0461d90b942ff15d4edcf39901"
+    },
+    "yjs-map-conflict-detection": {
+      "source_trial_id": "yjs-map-conflict-detection__hDZhtQd",
+      "base_commit": "7795050a749bd1111cbbdd9d0219b27226a8e710",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/yjs-map-conflict-detection__hDZhtQd/artifacts/model.patch",
+      "patch_sha256": "d1df8ce0f0611a23fe32709a387a25846eae34e6eba3d771b35605dac1b11134",
+      "tracked_diff_sha256": "d1df8ce0f0611a23fe32709a387a25846eae34e6eba3d771b35605dac1b11134"
+    },
+    "updo-policy-alerting": {
+      "source_trial_id": "updo-policy-alerting__BdzAiVg",
+      "base_commit": "9ecd74f5bd56fa915501e5b77da044d97c450a74",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/updo-policy-alerting__BdzAiVg/artifacts/model.patch",
+      "patch_sha256": "70867d591e23e82f086eb2924e4ca6b977f112410c0fbcb14cbffb07e5a110aa",
+      "tracked_diff_sha256": "70867d591e23e82f086eb2924e4ca6b977f112410c0fbcb14cbffb07e5a110aa"
+    },
+    "obsidian-linter-link-format-conversion": {
+      "source_trial_id": "obsidian-linter-link-format-conv__5HrQ5pW",
+      "base_commit": "6393b3ab32a2ace1fc24d4b0f5e0f13a179c874f",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/obsidian-linter-link-format-conv__5HrQ5pW/artifacts/model.patch",
+      "patch_sha256": "07e7b2104b35782f4af0ea4a9611161cf0a48067b15c7c8739eb4dd75a9b3097",
+      "tracked_diff_sha256": "07e7b2104b35782f4af0ea4a9611161cf0a48067b15c7c8739eb4dd75a9b3097"
+    },
+    "quill-shared-toolbar-focus": {
+      "source_trial_id": "quill-shared-toolbar-focus__kciZ2TQ",
+      "base_commit": "539cbffd0a13b18e9c65eb84dd35e6596e403158",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/quill-shared-toolbar-focus__kciZ2TQ/artifacts/model.patch",
+      "patch_sha256": "cf780978863509f2f6a74278a99101ede6e8dd555e8b138140b9f6b74ee1767a",
+      "tracked_diff_sha256": "cf780978863509f2f6a74278a99101ede6e8dd555e8b138140b9f6b74ee1767a"
+    },
+    "sqlfmt-create-table-ddl-formatting": {
+      "source_trial_id": "sqlfmt-create-table-ddl-formatti__9794nU2",
+      "base_commit": "da140993a4547170ef85dc5ce7ce1c270f4322b3",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/sqlfmt-create-table-ddl-formatti__9794nU2/artifacts/model.patch",
+      "patch_sha256": "514193b26547b8cf785192d5325fabed7658d0bb690aa2416113e95d605b8f5b",
+      "tracked_diff_sha256": "514193b26547b8cf785192d5325fabed7658d0bb690aa2416113e95d605b8f5b"
+    },
+    "expr-try-catch-errors": {
+      "source_trial_id": "expr-try-catch-errors__UFvKYVg",
+      "base_commit": "851b241a301f7c74646e65e4009c69cf290993a8",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/expr-try-catch-errors__UFvKYVg/artifacts/model.patch",
+      "patch_sha256": "2d77cc5ad455306011f980aebb17cf6efb86350749268f210762daee01fc1148",
+      "tracked_diff_sha256": "2d77cc5ad455306011f980aebb17cf6efb86350749268f210762daee01fc1148"
+    },
+    "tengo-callable-instance-isolation": {
+      "source_trial_id": "tengo-callable-instance-isolatio__nyNvZVz",
+      "base_commit": "3cad0da7a51b1206c6f01e3f4fbb44b976d5275c",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/tengo-callable-instance-isolatio__nyNvZVz/artifacts/model.patch",
+      "patch_sha256": "4077952b56651efe1b4bc71ed519a4dadfcffa2ece8cdc6e9a52e397c11fa418",
+      "tracked_diff_sha256": "4077952b56651efe1b4bc71ed519a4dadfcffa2ece8cdc6e9a52e397c11fa418"
+    },
+    "claude-code-by-agents-recursive-delegation": {
+      "source_trial_id": "claude-code-by-agents-recursive__DRvtYrs",
+      "base_commit": "5e0a2247d446c49a9951a06bb83b6e956dc7eb41",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/claude-code-by-agents-recursive__DRvtYrs/artifacts/model.patch",
+      "patch_sha256": "bac89c92ddc1434a79de18c1bae2f7a76130f68f2ca7368e5fa27e753aea111e",
+      "tracked_diff_sha256": "bac89c92ddc1434a79de18c1bae2f7a76130f68f2ca7368e5fa27e753aea111e"
+    },
+    "ytt-jsonpath-query-api": {
+      "source_trial_id": "ytt-jsonpath-query-api__zFTzJvR",
+      "base_commit": "452382821dd9dae7cc36995960656bb94dc47212",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/ytt-jsonpath-query-api__zFTzJvR/artifacts/model.patch",
+      "patch_sha256": "0ea1e90445bcc8e49a90230a53eed09014cfb0696e75e6816f40d7b005e523f9",
+      "tracked_diff_sha256": "0ea1e90445bcc8e49a90230a53eed09014cfb0696e75e6816f40d7b005e523f9"
+    },
+    "mobly-grouped-test-barriers": {
+      "source_trial_id": "mobly-grouped-test-barriers__RG9Tves",
+      "base_commit": "ec052921917ef201e73cc8e275dc91c5706b345f",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/mobly-grouped-test-barriers__RG9Tves/artifacts/model.patch",
+      "patch_sha256": "db3452fecd4e8e6c3672dbd9328c96105c7556886fcd402bd2a4add8946f0b7b",
+      "tracked_diff_sha256": "db3452fecd4e8e6c3672dbd9328c96105c7556886fcd402bd2a4add8946f0b7b"
+    },
+    "abs-stepped-slices": {
+      "source_trial_id": "abs-stepped-slices__7bahsX7",
+      "base_commit": "cb1b3b671d0ee9fa9da9f7b02f86967953ffd10a",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/abs-stepped-slices__7bahsX7/artifacts/model.patch",
+      "patch_sha256": "8c5340752da74639063271e8bca5e8db0e1aa5ca9419ab98c1d4a366b07038eb",
+      "tracked_diff_sha256": "8c5340752da74639063271e8bca5e8db0e1aa5ca9419ab98c1d4a366b07038eb"
+    },
+    "anko-default-function-arguments": {
+      "source_trial_id": "anko-default-function-arguments__uWJNQVV",
+      "base_commit": "9d2d84bb1564e9513287998c56ccf16c01c19008",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/anko-default-function-arguments__uWJNQVV/artifacts/model.patch",
+      "patch_sha256": "8b3a6b713ff79e273377b868756d0486f2a876916b4a269b5d5a0c7b722531f3",
+      "tracked_diff_sha256": "8b3a6b713ff79e273377b868756d0486f2a876916b4a269b5d5a0c7b722531f3"
+    },
+    "testem-per-launcher-reports": {
+      "source_trial_id": "testem-per-launcher-reports__wypbqZC",
+      "base_commit": "158f61ea91c9613d2011c41ee9be40ada1d7a307",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/testem-per-launcher-reports__wypbqZC/artifacts/model.patch",
+      "patch_sha256": "d129e4d0eedf813a00636b311cf98e7fcd9b24cdfd622b0c8ba6af22ba84435c",
+      "tracked_diff_sha256": "d129e4d0eedf813a00636b311cf98e7fcd9b24cdfd622b0c8ba6af22ba84435c"
+    },
+    "fastapi-implicit-head-options": {
+      "source_trial_id": "fastapi-implicit-head-options__qZrPHXT",
+      "base_commit": "11614be9021aa4ac078d4d0693a8b5250a1010d8",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/fastapi-implicit-head-options__qZrPHXT/artifacts/model.patch",
+      "patch_sha256": "2df7377fa148c007a1fb665d788f12fdf035583a4ac4093a37e3b15221e0ab49",
+      "tracked_diff_sha256": "2df7377fa148c007a1fb665d788f12fdf035583a4ac4093a37e3b15221e0ab49"
+    },
+    "wazero-multi-module-snapshots": {
+      "source_trial_id": "wazero-multi-module-snapshots__PVswNR5",
+      "base_commit": "3ec1e028c8cbda984a71bf72321008723ebdcb51",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/wazero-multi-module-snapshots__PVswNR5/artifacts/model.patch",
+      "patch_sha256": "c1cde8510764cf1f43a2c95e91fc2a337aa3b85db4908238e25870cb9b103cae",
+      "tracked_diff_sha256": "c1cde8510764cf1f43a2c95e91fc2a337aa3b85db4908238e25870cb9b103cae"
+    },
+    "anko-typed-variable-bindings": {
+      "source_trial_id": "anko-typed-variable-bindings__7wGZLXa",
+      "base_commit": "3f269a72ff69398b1250c584171f32d12c0d8085",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/anko-typed-variable-bindings__7wGZLXa/artifacts/model.patch",
+      "patch_sha256": "9ab641294da574e234476b0e57de6b3e698be2d2890b93a69858681d42caaf56",
+      "tracked_diff_sha256": "9ab641294da574e234476b0e57de6b3e698be2d2890b93a69858681d42caaf56"
+    },
+    "arktype-json-schema-refs-dependencies": {
+      "source_trial_id": "arktype-json-schema-refs-depende__jj5dWjy",
+      "base_commit": "04355e8b26d1ad5264ef62314a2bc46c4de58ed8",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/arktype-json-schema-refs-depende__jj5dWjy/artifacts/model.patch",
+      "patch_sha256": "50891e290b3346f0fd7aefa0e86d51d070ab8a03c23965799fbd8f91163eef6a",
+      "tracked_diff_sha256": "50891e290b3346f0fd7aefa0e86d51d070ab8a03c23965799fbd8f91163eef6a"
+    },
+    "valibot-recursive-schema-composition": {
+      "source_trial_id": "valibot-recursive-schema-composi__4XofxDq",
+      "base_commit": "50016c77c808f9ca80391cf1abc96cc5416cf57d",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/valibot-recursive-schema-composi__4XofxDq/artifacts/model.patch",
+      "patch_sha256": "7428bc238103b861c96b00478fc928141bfde86d69020fd4563ff276a2757247",
+      "tracked_diff_sha256": "7428bc238103b861c96b00478fc928141bfde86d69020fd4563ff276a2757247"
+    },
+    "scriggo-method-declarations": {
+      "source_trial_id": "scriggo-method-declarations__B2EqGxt",
+      "base_commit": "11703bb5e02cca28d08fe83ac9a4bdd2e087235e",
+      "patch_path": "/Users/gzx/code/python/external_agents_eval/results/deepswe/deepswe-v1.1-pi-random60-seed20260901-tools7-w5-cleanup/scriggo-method-declarations__B2EqGxt/artifacts/model.patch",
+      "patch_sha256": "60f3b23d700dd2aa45a63a49ec73e3dace588fb2201be0989e5ac0cd3750a27a",
+      "tracked_diff_sha256": "60f3b23d700dd2aa45a63a49ec73e3dace588fb2201be0989e5ac0cd3750a27a"
+    }
+  }
+}

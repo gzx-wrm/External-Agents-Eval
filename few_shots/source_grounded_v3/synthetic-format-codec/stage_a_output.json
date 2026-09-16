@@ -1,0 +1,71 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-format-codec",
+  "summary": "Expose payload format selection, record it in encoded data, and retain default-version decoding compatibility.",
+  "sources": [
+    {
+      "id": "S01",
+      "kind": "task",
+      "field": "description",
+      "quote": "Add a format_version argument to encode."
+    },
+    {
+      "id": "S02",
+      "kind": "task",
+      "field": "description",
+      "quote": "Include the selected version in every encoded payload."
+    },
+    {
+      "id": "S03",
+      "kind": "task",
+      "field": "description",
+      "quote": "Decode payloads produced with the existing default version without requiring callers to pass a version."
+    },
+    {
+      "id": "S04",
+      "kind": "task",
+      "field": "description",
+      "quote": "The binary framing layout is not prescribed."
+    },
+    {
+      "id": "S05",
+      "kind": "repository",
+      "path": "src/codec.py",
+      "line_start": 5,
+      "line_end": 22
+    }
+  ],
+  "obligations": [
+    {
+      "id": "O01",
+      "statement": "The public encode function accepts a format_version argument.",
+      "criticality": "must",
+      "basis": "explicit_task",
+      "source_refs": ["S01"],
+      "rationale": "S01 directly adds the public argument."
+    },
+    {
+      "id": "O02",
+      "statement": "Every encoded payload contains the format version selected by its caller.",
+      "criticality": "must",
+      "basis": "explicit_task",
+      "source_refs": ["S02"],
+      "rationale": "S02 explicitly requires the selected value in each payload."
+    },
+    {
+      "id": "O03",
+      "statement": "The decoder accepts existing default-version payloads without a new caller argument.",
+      "criticality": "must",
+      "basis": "explicit_task",
+      "source_refs": ["S03", "S05"],
+      "rationale": "S03 states the compatibility rule and S05 identifies the frozen decoder entry point."
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "U01",
+      "question": "Which binary framing layout should carry the format version?",
+      "source_refs": ["S04", "S05"]
+    }
+  ]
+}

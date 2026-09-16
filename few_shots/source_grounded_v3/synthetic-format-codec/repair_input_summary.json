@@ -1,0 +1,11 @@
+{
+  "task_id": "synthetic-format-codec",
+  "example_scope": "Continuous repair of Q01 from the matching Stage B assessment.",
+  "request_order": ["Q01"],
+  "finding_refs": ["O02"],
+  "repair_method": "Verify the constant-version write, replace only that value source, then check both selected-version behavior and default compatibility.",
+  "preserve": [
+    "Default-version encoding remains unchanged.",
+    "Existing default-version payloads remain decodable."
+  ]
+}

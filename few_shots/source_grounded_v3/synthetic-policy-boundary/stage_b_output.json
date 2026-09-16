@@ -1,0 +1,99 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-policy-boundary",
+  "patch_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "ledger_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "additional_sources": [
+    {
+      "id": "A01",
+      "kind": "task",
+      "field": "description",
+      "quote": "When strict is true, reject unknown keys."
+    },
+    {
+      "id": "A02",
+      "kind": "repository",
+      "path": "src/config.py",
+      "line_start": 33,
+      "line_end": 41
+    }
+  ],
+  "late_obligations": [
+    {
+      "id": "L01",
+      "statement": "When strict is true, parse_config rejects keys outside the frozen set of recognized keys.",
+      "criticality": "must",
+      "basis": "explicit_task",
+      "source_refs": ["A01", "A02"],
+      "rationale": "A01 states the strict-mode behavior and A02 identifies the base repository's recognized-key set."
+    }
+  ],
+  "obligation_assessments": [
+    {
+      "obligation_ref": "O01",
+      "source_status": "unsupported",
+      "source_note": "S01 requires a strict argument but does not require a new byte-input surface; the statement combines supported and unsupported behavior.",
+      "implementation_status": "not_applicable",
+      "implementation_evidence": [],
+      "validation_evidence": [],
+      "gap": null
+    },
+    {
+      "obligation_ref": "O02",
+      "source_status": "unclear",
+      "source_note": "S04 explicitly leaves duplicate-key classification unspecified, so public sources do not uniquely establish this must obligation.",
+      "implementation_status": "not_applicable",
+      "implementation_evidence": [],
+      "validation_evidence": [],
+      "gap": null
+    },
+    {
+      "obligation_ref": "O03",
+      "source_status": "supported",
+      "source_note": null,
+      "implementation_status": "covered",
+      "implementation_evidence": [
+        {
+          "path": "src/config.py",
+          "line_start": 52,
+          "line_end": 63,
+          "explanation": "Valid mappings still flow through the frozen result builder without representation changes."
+        }
+      ],
+      "validation_evidence": [
+        {
+          "command": "python -m pytest tests/test_config.py -k valid_mapping_result",
+          "result": "passed",
+          "explanation": "The focused public check compared the pre-change and candidate result for a valid mapping."
+        }
+      ],
+      "gap": null
+    },
+    {
+      "obligation_ref": "L01",
+      "source_status": "supported",
+      "source_note": null,
+      "implementation_status": "uncertain",
+      "implementation_evidence": [
+        {
+          "path": "src/config.py",
+          "line_start": 42,
+          "line_end": 51,
+          "explanation": "The strict branch appears to compare incoming keys with the frozen recognized-key set, but an indirect adapter may transform keys before this branch."
+        }
+      ],
+      "validation_evidence": [
+        {
+          "command": "python -m pytest tests/test_config.py -k strict_unknown_key",
+          "result": "not_run",
+          "explanation": "The fixture runtime is unavailable, so the public adapter path could not be distinguished from the direct helper path."
+        }
+      ],
+      "gap": "Static inspection cannot establish whether unknown keys survive the public adapter and reach the strict comparison."
+    }
+  ],
+  "unexpected_regressions": [],
+  "repair_requests": [],
+  "verdict": "abstain",
+  "verdict_rationale": "The duplicate-key rule is source-unclear and the late must behavior cannot be verified without the unavailable runtime; neither supports a safe finite repair request."
+}

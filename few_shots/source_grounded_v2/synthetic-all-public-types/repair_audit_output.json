@@ -1,0 +1,41 @@
+{
+  "schema_version": "2.0",
+  "task_id": "synthetic-all-public-types",
+  "p0_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "assessment_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "effective_review_set_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "additional_sources": [],
+  "changed_paths": ["src/codec.py"],
+  "changes": [
+    {
+      "change_id": "C01",
+      "request_refs": ["Q01"],
+      "criterion_refs": ["O02.C01", "O02.C02", "L01.C01"],
+      "risk_tags": ["data_representation", "ordering", "public_api"],
+      "before_behavior": "Loop is omitted/rejected, Loop points can be reordered, and version-1 envelopes are rejected.",
+      "after_behavior": "Circle and Loop round-trip with fields intact and documented version-1 envelopes decode again.",
+      "source_refs": ["S01", "S03", "S04", "S06"],
+      "source_check": "supported",
+      "counterevidence": [],
+      "preserve_behaviors": ["Unknown non-public shape tags remain fail-closed."],
+      "decision": "implement",
+      "changed_paths": ["src/codec.py"],
+      "validation": [
+        {
+          "command": "python -m pytest tests/test_codec.py -q",
+          "exit_code": 0,
+          "expected": "Public shapes and version-1 envelopes pass while unknown tags remain rejected.",
+          "actual": "All executable codec checks passed; the optional-dependency dispatch check remains separately unaddressed.",
+          "log_path": null
+        }
+      ]
+    }
+  ],
+  "unaddressed_requests": [
+    {
+      "request_ref": "Q02",
+      "reason": "The optional public codec dependency is unavailable, so the investigation cannot be completed without changing the frozen environment."
+    }
+  ],
+  "validation_summary": "Confirmed fixes were implemented and validated; the independent uncertainty remains explicitly unaddressed."
+}

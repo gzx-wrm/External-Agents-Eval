@@ -1,0 +1,90 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-format-codec",
+  "patch_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "ledger_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "additional_sources": [],
+  "late_obligations": [],
+  "obligation_assessments": [
+    {
+      "obligation_ref": "O01",
+      "source_status": "supported",
+      "source_note": null,
+      "implementation_status": "covered",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "line_start": 28,
+          "line_end": 29,
+          "explanation": "The public encode signature accepts format_version."
+        }
+      ],
+      "validation_evidence": [],
+      "gap": null
+    },
+    {
+      "obligation_ref": "O02",
+      "source_status": "supported",
+      "source_note": null,
+      "implementation_status": "partial",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "line_start": 28,
+          "line_end": 29,
+          "explanation": "The serialized version is DEFAULT_VERSION, not the supplied argument."
+        }
+      ],
+      "validation_evidence": [
+        {
+          "command": "python -c 'import json; from src.codec import encode; p=json.loads(encode(\"x\", format_version=2)); assert p[\"version\"] == 2, p'",
+          "result": "failed",
+          "explanation": "S02 requires the selected value. Selecting 2 produced version 1; default-only checks could not distinguish this defect."
+        }
+      ],
+      "gap": "Selecting version 2 serializes version 1."
+    },
+    {
+      "obligation_ref": "O03",
+      "source_status": "supported",
+      "source_note": null,
+      "implementation_status": "covered",
+      "implementation_evidence": [
+        {
+          "path": "src/codec.py",
+          "line_start": 42,
+          "line_end": 43,
+          "explanation": "decode retains its one-argument default-payload path."
+        }
+      ],
+      "validation_evidence": [
+        {
+          "command": "python -m pytest tests/test_codec.py -k default_payload_compatibility",
+          "result": "passed",
+          "explanation": "A frozen default-version payload decoded without a version argument."
+        }
+      ],
+      "gap": null
+    }
+  ],
+  "unexpected_regressions": [],
+  "repair_requests": [
+    {
+      "id": "Q01",
+      "finding_refs": ["O02"],
+      "action": "fix",
+      "problem": "A public encode call selecting 2 emits version 1, contrary to S02; default-only validation missed it.",
+      "required_outcome": "Serialize the caller-selected version; no new framing layout is required.",
+      "preserve": [
+        "Omitted format_version retains its default.",
+        "Existing default-version payloads decode without a new argument."
+      ],
+      "validation": [
+        "python -c 'import json; from src.codec import encode; p=json.loads(encode(\"x\", format_version=2)); assert p[\"version\"] == 2, p'",
+        "python -m pytest tests/test_codec.py -k 'selected_version or default_payload_compatibility'"
+      ]
+    }
+  ],
+  "verdict": "request_changes",
+  "verdict_rationale": "A task-derived non-default call disproved coverage while the default compatibility control passed. Q01 addresses only that gap."
+}

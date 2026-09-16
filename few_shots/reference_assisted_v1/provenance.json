@@ -1,0 +1,29 @@
+{
+  "authorization_date": "2026-09-04",
+  "development_task_ids": [
+    "abs-stepped-slices",
+    "effect-sse-httpapi-streaming"
+  ],
+  "mode": "reference_assisted_development_only",
+  "prompt_exposure": "Reference materials were used only to audit labels. Their paths, test names, output, and patch contents are not embedded in the eight Reviewer example artifacts.",
+  "reference_material_scope": [
+    "abs-stepped-slices",
+    "effect-sse-httpapi-streaming"
+  ],
+  "schema_version": "1.0",
+  "source_sha256": {
+    "abs-stepped-slices": {
+      "instruction": "0381637972fc77c6c27bbc9f999af79ce57e9fc78d9ac43cf1ced51c9f8ea3dd",
+      "p0": "8c5340752da74639063271e8bca5e8db0e1aa5ca9419ab98c1d4a366b07038eb",
+      "solution": "3006ff58e945289a5defb1fb314ba3bcbb8a2c7df278f4678b760e53073fb82c",
+      "test_patch": "bf9eab2e681531d83c458e7ad45e4a2fecf622c0ccaee6a9581d32875c45ecc9"
+    },
+    "effect-sse-httpapi-streaming": {
+      "instruction": "b9fc8403f53c0aed7e53cf7c2ca3f5df4249de5af8ac5ffc1dfc8500d21ce205",
+      "p0": "988f22a5d858643fbb1426abde9749af82606b0461d90b942ff15d4edcf39901",
+      "solution": "38260088472ebcccefc84ae784dcefcf977beb3b403dd80b0d556a21a3b245c9",
+      "test_patch": "ce032707d6f1bfefb225d3b888dfac2991a50e4bcdcaa6cae0bef3f3518f5599"
+    }
+  },
+  "user_authorized": true
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-format-codec",
+  "task": {
+    "title": "Versioned payload codec",
+    "description": "Add a format_version argument to encode. Include the selected version in every encoded payload. Decode payloads produced with the existing default version without requiring callers to pass a version. The binary framing layout is not prescribed."
+  },
+  "repository": {
+    "name": "synthetic/payload-codec",
+    "base_commit": "2222222222222222222222222222222222222222",
+    "worktree": "/synthetic/payload-codec",
+    "state": "base_only"
+  }
+}

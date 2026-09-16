@@ -117,6 +117,195 @@ external-agents-eval deepswe summary \
   --job-dir results/deepswe/deepswe-v1.1-pi-random60-seed20260901
 ```
 
+### Specification review and one-pass repair experiment
+
+The `pi-review-repair` composite Agent provides versioned, reversible review contracts. It
+replays or solves P0, builds an obligation ledger in a clean worktree, assesses P0 in a
+separate Pi session, and either preserves P0 or runs one repair session. Pier receives and
+verifies only the committed P1.
+
+`--review-arm` selects the control behavior. Its historical default contract is preserved;
+`--review-contract-version 3.0` explicitly selects the V3 obligation-level bundle for E1/E2:
+
+| Arm | Contract | Behavior |
+|---|---|---|
+| `E0` | v1.0 | Frozen baseline from `docs/第一版实验方案.md` |
+| `E1` | v2.0 | Criterion-level sources, Stage B challenges, effective review set, and `abstain` |
+| `E2` | v2.0 | E1 plus mandatory Repair audit and audit-failure fallback to P0 |
+
+The v2 implementation follows `docs/第二版实验方案.md`, and the opt-in V3 implementation
+follows `docs/第三版实验方案.md`. E0 keeps the historical v1 Schema, prompts, few-shots,
+routing, and result readability intact. E1/E2 continue to default to V2 so old commands are
+reproducible; either may use V3 explicitly, while E2 still means mandatory Repair audit.
+
+Freeze the exact source job, source manifest, base commits, trial IDs, and P0 digests before
+running. This command reads only source configuration and `artifacts/model.patch`; it does
+not open verifier, hidden-test, or solution artifacts:
+
+```bash
+external-agents-eval deepswe prepare-review-manifest \
+  --source-job-dir results/deepswe/<exact-source-job> \
+  --checkout-dir .benchmarks/deep-swe \
+  --scope random60 \
+  --output manifests/deepswe_v1.1_pi_random60_p0_20260901.json
+```
+
+Use `--scope near-miss16` for the original exploratory 16-task recovery set. The
+`random60` scope freezes all 60 source tasks. Because the two reference-assisted
+few-shot development tasks are also members of that source sample, they are still run for
+pipeline completeness but are marked as excluded from the primary metrics. The resulting
+main analysis therefore has 58 tasks; `abs-stepped-slices` and
+`effect-sse-httpapi-streaming` are reported separately as development-contaminated cases.
+
+Formal existing-P0 runs use the explicitly authorized reference-assisted development set at
+`few_shots/reference_assisted_v1`. It contains four Reviewer JSON artifacts under each of
+`abs-stepped-slices/` and `effect-sse-httpapi-streaming/`, plus a root `provenance.json` that
+records the mode and source digests. Reference materials were used offline to audit labels but
+are not embedded in Reviewer-visible examples. At launch the loader validates all nine files,
+copies them to a content-addressed read-only snapshot, records every digest in the batch run
+record, and makes each trial revalidate the aggregate digest. The composite workflow also fixes
+task-level attempts at one; use concurrency, not automatic retries, for either experiment scope.
+
+Regenerate the exact set only while the pinned development sources retain their recorded hashes:
+
+```bash
+.venv-deepswe/bin/python scripts/build_reference_few_shots.py \
+  --output few_shots/reference_assisted_v1
+```
+
+```bash
+scripts/run_with_deepseek_key.sh \
+  external-agents-eval deepswe run \
+  --agent pi-review-repair \
+  --review-arm E0 \
+  --p0-manifest manifests/deepswe_v1.1_pi_random60_p0_20260901.json \
+  --few-shot-dir few_shots/reference_assisted_v1 \
+  --job-name deepswe-v1.1-pi-review-repair-random60 \
+  --num-workers 5
+```
+
+For v2 development or a dry-run preflight, use the unrelated synthetic examples in
+`few_shots/source_grounded_v2`:
+
+```bash
+external-agents-eval deepswe run \
+  --agent pi-review-repair \
+  --review-arm E2 \
+  --p0-manifest manifests/deepswe_v1.1_pi_random60_p0_20260901.json \
+  --few-shot-dir few_shots/source_grounded_v2 \
+  --job-name deepswe-v1.1-pi-review-repair-v2-smoke \
+  --task-name <task-id> \
+  --dry-run
+```
+
+E1 uses the same v2 synthetic bundle but does not make Repair audit validity a publication
+gate. E0 rejects v2 few-shots, and E1/E2 reject v1 few-shots. A dry run validates and prints
+the configuration without starting Pier, an experiment, a container, or an image build.
+
+For V3, use the independent obligation-level synthetic bundle and select the contract
+explicitly:
+
+```bash
+external-agents-eval deepswe run \
+  --agent pi-review-repair \
+  --review-arm E2 \
+  --review-contract-version 3.0 \
+  --p0-manifest manifests/deepswe_v1.1_pi_random60_p0_20260901.json \
+  --few-shot-dir few_shots/source_grounded_v3 \
+  --job-name deepswe-v1.1-pi-review-repair-v3-smoke \
+  --task-name <task-id> \
+  --dry-run
+```
+
+V3 replaces criterion-level review with atomic Oxx/Lxx obligations, Controller-bound task
+and base-repository sources, unified source/implementation assessments, automatically
+expanded repair-request contexts, and obligation-level Repair audits. The V3 few-shots are
+synthetic and contain no benchmark task or evaluation answer.
+
+Before the full batch, the same frozen configuration can be exercised on one task by adding
+`--task-name <task-id>` and using a distinct smoke-test job name.
+
+Each trial records the append-only state log, rendered prompts, Schema/few-shot/prompt
+digests, raw and validated Reviewer outputs, P0/P1, resource usage, and the final workflow
+manifest under `review_repair/`. If a Reviewer role or JSON contract fails, P1 falls back to
+P0; a Reviewer worktree mutation is recorded as a protocol violation and cannot propagate
+to the repair worktree. `COMPLETED` in that manifest denotes completion of the composite Agent;
+the subsequent verifier lifecycle and reward remain Pier-owned in the trial `result.json`.
+Reviewer prompts require one fenced `json` code block. The controller normalizes responses in
+three conservative stages: exact JSON, one valid fenced object, then one unambiguous embedded
+top-level object decoded with Python's JSON parser. It never uses greedy brace matching, and
+ambiguous responses continue through the bounded correction path.
+
+V2 adds `inputs/source_policy.json`,
+`reviewer/source_anchor_validation.json`, `reviewer/effective_review_set.json`, and
+`reviewer/routing_validation.json`. E2 also records raw, validated, or incomplete Repair
+audit artifacts below `repair/`, plus `repair/repair_sequence_observation.json`. That
+observation records whether the audit Schema and frozen inputs were read before the first
+explicit `edit`/`write` tool call; it deliberately marks shell activity as ambiguous and is
+not a tool-level edit gate or proof of semantic reasoning. The writable audit target is
+materialized outside the Git
+worktree, so it cannot enter `artifacts/model.patch`. After a normally completed Repair,
+missing or invalid audit falls back to P0 while preserving the candidate patch only as a
+diagnostic artifact. A Repair timeout remains an agent failure and may publish a safely
+captured partial patch for verifier scoring under the existing three-hour policy.
+
+V3 replaces the source-policy artifact with `reviewer/source_bindings.json` and, after
+Stage B, `reviewer/additional_source_bindings.json`. Repository anchors are enriched by the
+Controller with an exact base quote, resolved revision, and file SHA-256; models provide only
+the base-relative path and line range. The manifest records the selected contract, prompt
+bundle, few-shot summary, Schema summary, and all corresponding content hashes.
+
+V2/V3 manifests hash the workflow package and the Pi/DeepSWE runtime adapters that select,
+execute, aggregate, and report the experiment. These are content hashes of the actual files,
+so an uncommitted working tree is not represented merely by `git HEAD`. E0 retains the
+historical implementation-hash shape and all v1 contract paths.
+
+V5 is a separate agent entry and does not accept the V1--V4 arm, contract, prompt, or
+few-shot options. It runs A, independent I/R sessions, S, and at most one Repair against the
+same frozen P0 manifest. Start with a one-task preflight, then remove `--dry-run` and wrap the
+command with `scripts/run_with_deepseek_key.sh` for the real smoke run:
+
+```bash
+external-agents-eval deepswe run \
+  --agent pi-v5-review-repair \
+  --p0-manifest manifests/deepswe_v1.1_pi_random60_p0_20260901.json \
+  --job-name deepswe-v1.1-pi-v5-review-repair-smoke \
+  --task-name <task-id> \
+  --num-workers 1 \
+  --dry-run
+```
+
+V5 stores its SQLite state, content-bound role exports, immutable review-note bundles,
+P0/P1 patches, and decision under the trial's `v5_review_repair/` artifact directory. Keep
+task-level attempts at one; the workflow owns its bounded role retries and resume identities.
+After the task image is built, V5 records any environment-authored Git diff as the baseline,
+materializes that baseline into every isolated role worktree, and stores P0/P1 relative to
+the baseline. `manifest.json` binds the original base commit, baseline digest, and patch
+coordinate system. Historical base-relative P0 manifests are normalized before review.
+
+After the frozen batch has finished, compute the experiment-specific metrics separately
+from the ordinary benchmark summary:
+
+```bash
+external-agents-eval deepswe review-summary \
+  --job-dir results/deepswe/<review-job> \
+  --p0-manifest manifests/deepswe_v1.1_pi_random60_p0_20260901.json \
+  --details
+```
+
+For `random60`, this reports paired P0/P1 pass rates, net pass change, `fail → pass`,
+`pass → fail`, retention, recovery, and the two excluded-task transitions. V2 summaries also
+include approval coverage, abstain rate, source-anchor status, challenge dispositions,
+effective/unresolved criteria, Repair audit status, source-check decisions, request closure,
+Repair sequence observation status, and per-role timeout/cost data. For
+V3, the same report adds obligation source and implementation statuses, effective/nonbinding/
+unresolved obligation counts, late-obligation counts, and the corresponding Stage A omission
+count. For
+`near-miss16`, it retains the fixed-denominator recovery analysis and deliberately labels
+that result as exploratory rather than an unbiased overall pass-rate uplift. Both modes also
+report Schema validity, verdicts, obligation categories, F2P recovery, P2P regression, and
+patch-size changes.
+
 The DeepSWE task images are currently `linux/amd64`. On an ARM Mac, a one-task Docker
 smoke run may use emulation, but the full 60-task evaluation should run on AMD64 Linux or
 Modal. Local Docker runs use a job-scoped BuildKit builder. Pier removes each trial's

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://external-agents-eval.local/source_policy_v1.schema.json",
+  "title": "SourcePolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "contract_version", "task_id", "issue_sha256", "base_commit", "limits", "allowed_basis_kinds", "forbid_candidate_as_source", "forbid_hidden_evidence"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "contract_version": {"const": "2.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "issue_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "base_commit": {"type": "string", "pattern": "^[0-9a-f]{7,64}$"},
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_obligations", "max_criteria_per_obligation", "max_sources", "max_challenges", "max_repair_requests"],
+      "properties": {
+        "max_obligations": {"const": 32},
+        "max_criteria_per_obligation": {"const": 8},
+        "max_sources": {"const": 128},
+        "max_challenges": {"const": 32},
+        "max_repair_requests": {"const": 3}
+      }
+    },
+    "allowed_basis_kinds": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"enum": ["explicit_issue", "repository_contract", "compatibility_inferred", "unspecified"]}
+    },
+    "forbid_candidate_as_source": {"const": true},
+    "forbid_hidden_evidence": {"const": true}
+  }
+}

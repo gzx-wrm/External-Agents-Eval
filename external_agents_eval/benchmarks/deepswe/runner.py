@@ -7,6 +7,8 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
+import time
 import warnings
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -24,15 +26,68 @@ from external_agents_eval.benchmarks.deepswe.manifest import (
     DeepSWEManifest,
     validate_manifest_against_checkout,
 )
-from external_agents_eval.benchmarks.deepswe.pier_compat import DEEPSWE_BUILDER_ENV
+from external_agents_eval.benchmarks.deepswe.pier_compat import (
+    DEEPSWE_BUILDER_ENV,
+    _is_transient_environment_start_error,
+)
+from external_agents_eval.benchmarks.deepswe.reviewer_experiment_manifest import (
+    ReviewerExperimentManifest,
+    freeze_few_shots,
+    git_object_ids_equivalent,
+    load_frozen_few_shots,
+    load_reviewer_experiment_manifest,
+    task_base_commit,
+)
 from external_agents_eval.benchmarks.swebench.manifest import atomic_write_json
+from external_agents_eval.workflows.solve_review_repair.v5_config import (
+    V5_CONTROLLER_VERSION,
+    V5_PROMPT_VERSION,
+)
 
 AGENT_IMPORT_PATHS = {
     "pi": "external_agents_eval.agents.pier.pi:PiPierAgent",
+    "pi-review-repair": (
+        "external_agents_eval.agents.pier.pi_solve_review_repair:PiSolveReviewRepairPierAgent"
+    ),
+    "pi-v5-review-repair": (
+        "external_agents_eval.agents.pier.pi_v5_solve_review_repair:PiV5SolveReviewRepairPierAgent"
+    ),
     "hermes": "external_agents_eval.agents.pier.hermes:HermesPierAgent",
 }
 PIER_COMPAT_MODULE = "external_agents_eval.benchmarks.deepswe.pier_compat"
 DOCKER_BUILDER_PREFIX = "external-eval-deepswe"
+REVIEW_AGENT_TIMEOUT_MULTIPLIER = 4.0
+REVIEW_ROLE_TIMEOUTS_SEC = {
+    "solver": 10_800,
+    "repair": 10_800,
+    "specification_reviewer": 3_600,
+    "patch_reviewer": 3_600,
+    "json_corrector": 1_800,
+}
+
+
+def resolve_review_prompt_version(
+    contract_version: str, review_arm: str, requested: str | None
+) -> str:
+    if requested is not None and requested != "4.0":
+        raise ValueError(f"Unsupported reviewer prompt version: {requested}")
+    if requested == "4.0" and (contract_version != "3.0" or review_arm not in {"E1", "E2"}):
+        raise ValueError("Reviewer prompt v4.0 requires contract v3.0 and experiment arm E1 or E2")
+    if requested is not None:
+        return requested
+    return "1.3" if contract_version == "1.0" else "2.3" if contract_version == "2.0" else "3.0"
+
+
+def resolve_review_contract_version(review_arm: str, requested: str | None) -> str:
+    if review_arm not in {"E0", "E1", "E2"}:
+        raise ValueError(f"Unsupported reviewer experiment arm: {review_arm}")
+    contract = requested or ("1.0" if review_arm == "E0" else "2.0")
+    if contract not in {"1.0", "2.0", "3.0"}:
+        raise ValueError(f"Unsupported reviewer contract version: {contract}")
+    allowed = {"1.0"} if review_arm == "E0" else {"2.0", "3.0"}
+    if contract not in allowed:
+        raise ValueError(f"Reviewer arm {review_arm} is incompatible with contract {contract}")
+    return contract
 
 
 def _resolve_pier_executable(pier_executable: str) -> str | None:
@@ -64,6 +119,14 @@ def build_pier_command(
     attempts: int = 1,
     max_turns: int | None = None,
     environment: str = "docker",
+    reviewer_manifest: ReviewerExperimentManifest | None = None,
+    workflow_timeout_sec: int | None = None,
+    few_shot_dir: Path | None = None,
+    few_shot_digest: str | None = None,
+    review_arm: str = "E0",
+    review_contract_version: str | None = None,
+    review_prompt_version: str | None = None,
+    include_task_ids: tuple[str, ...] | None = None,
 ) -> list[str]:
     if agent_id not in DEEPSWE_AGENTS:
         raise ValueError(f"Unsupported DeepSWE agent: {agent_id}")
@@ -71,6 +134,38 @@ def build_pier_command(
         raise ValueError("num_workers and attempts must be positive")
     if max_turns is not None and max_turns <= 0:
         raise ValueError("max_turns must be positive when provided")
+    if workflow_timeout_sec is not None and workflow_timeout_sec <= 0:
+        raise ValueError("workflow_timeout_sec must be positive when provided")
+    if agent_id == "pi-review-repair":
+        contract_version = resolve_review_contract_version(
+            review_arm, review_contract_version
+        )
+        resolve_review_prompt_version(
+            contract_version, review_arm, review_prompt_version
+        )
+    else:
+        contract_version = None
+        if review_arm != "E0":
+            raise ValueError(
+                "Reviewer experiment arms are valid only for pi-review-repair"
+            )
+        if review_contract_version is not None:
+            raise ValueError(
+                "Reviewer contract versions are valid only for pi-review-repair"
+            )
+        if review_prompt_version is not None:
+            raise ValueError(
+                "Reviewer prompt versions are valid only for pi-review-repair"
+            )
+    if reviewer_manifest is not None and agent_id not in {
+        "pi-review-repair",
+        "pi-v5-review-repair",
+    }:
+        raise ValueError("A reviewer manifest is valid only for a Pi reviewer workflow")
+    if agent_id in {"pi-review-repair", "pi-v5-review-repair"} and attempts != 1:
+        raise ValueError("The review workflow forbids automatic task-level retries")
+    if (few_shot_dir is None) != (few_shot_digest is None):
+        raise ValueError("few_shot_dir and few_shot_digest must be provided together")
     if environment not in {"docker", "modal"}:
         raise ValueError(f"Unsupported Pier environment: {environment}")
     command = [
@@ -113,7 +208,44 @@ def build_pier_command(
         )
     if agent_id == "hermes" and max_turns is not None:
         command.extend(["--agent-kwarg", f"max_turns={max_turns}"])
-    for task_id in manifest.task_ids:
+    if reviewer_manifest is not None:
+        command.extend(["--agent-kwarg", f"p0_manifest={reviewer_manifest.path.resolve()}"])
+    if few_shot_dir is not None:
+        command.extend(
+            [
+                "--agent-kwarg",
+                f"few_shot_dir={few_shot_dir.resolve()}",
+                "--agent-kwarg",
+                f"few_shot_digest={few_shot_digest}",
+            ]
+        )
+    if agent_id in {"pi-review-repair", "pi-v5-review-repair"} and workflow_timeout_sec is not None:
+        command.extend(["--agent-kwarg", f"workflow_timeout_sec={workflow_timeout_sec}"])
+    if agent_id == "pi-review-repair":
+        assert contract_version is not None
+        command.extend(["--agent-kwarg", f"review_arm={review_arm}"])
+        command.extend(["--agent-kwarg", f"review_contract_version={contract_version}"])
+        if review_prompt_version is not None:
+            command.extend(["--agent-kwarg", f"review_prompt_version={review_prompt_version}"])
+        command.extend(
+            [
+                "--agent-timeout-multiplier",
+                f"{REVIEW_AGENT_TIMEOUT_MULTIPLIER:g}",
+            ]
+        )
+    if agent_id == "pi-v5-review-repair":
+        command.extend(["--agent-timeout-multiplier", f"{REVIEW_AGENT_TIMEOUT_MULTIPLIER:g}"])
+    available_task_ids = (
+        reviewer_manifest.task_ids if reviewer_manifest is not None else manifest.task_ids
+    )
+    selected_task_ids = include_task_ids if include_task_ids is not None else available_task_ids
+    if len(selected_task_ids) != len(set(selected_task_ids)):
+        raise ValueError("Selected DeepSWE task IDs must be unique")
+    unknown = sorted(set(selected_task_ids) - set(available_task_ids))
+    if not selected_task_ids or unknown:
+        detail = ": " + ", ".join(unknown) if unknown else ""
+        raise ValueError("Selected DeepSWE tasks are empty or outside the active manifest" + detail)
+    for task_id in selected_task_ids:
         command.extend(["--include-task-name", task_id])
     return command
 
@@ -237,6 +369,86 @@ def _remove_dedicated_builder(builder_name: str) -> None:
         )
 
 
+class EgressProxyPrewarmError(RuntimeError):
+    def __init__(self, message: str, *, attempts: int, retryable: bool) -> None:
+        super().__init__(message)
+        self.attempts = attempts
+        self.retryable = retryable
+
+
+def _prewarm_egress_proxy(builder_name: str, *, max_attempts: int = 3) -> int:
+    """Populate the job builder with Pier's exact egress-proxy layers."""
+    from pier.environments.agent_setup import (
+        new_proxy_token,
+        write_docker_proxy_compose,
+    )
+    from pier.models.agent.network import NetworkAllowlist
+
+    with tempfile.TemporaryDirectory(prefix="external-eval-pier-proxy-") as temporary:
+        root = Path(temporary)
+        proxy_dir = root / "egress-proxy"
+        write_docker_proxy_compose(
+            path=root / "docker-compose-egress-proxy.json",
+            proxy_dir=proxy_dir,
+            allowlist=NetworkAllowlist(domains=["prewarm.invalid"]),
+            token=new_proxy_token(),
+        )
+        command = [
+            "docker",
+            "buildx",
+            "build",
+            "--builder",
+            builder_name,
+            "--progress=plain",
+            str(proxy_dir),
+        ]
+        for attempt in range(1, max_attempts + 1):
+            try:
+                result = subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+            except OSError as error:
+                raise EgressProxyPrewarmError(
+                    f"Could not start the egress-proxy cache prewarm: {error}",
+                    attempts=attempt,
+                    retryable=False,
+                ) from error
+            if result.returncode == 0:
+                return attempt
+            output = "\n".join(
+                part.strip() for part in (result.stdout, result.stderr) if part
+            )
+            retryable = _is_transient_environment_start_error(output)
+            if not retryable or attempt == max_attempts:
+                detail = output[-4000:] or f"docker buildx exited with {result.returncode}"
+                raise EgressProxyPrewarmError(
+                    f"Egress-proxy cache prewarm failed: {detail}",
+                    attempts=attempt,
+                    retryable=retryable,
+                )
+            time.sleep(2 ** (attempt - 1))
+    raise AssertionError("egress-proxy prewarm loop did not return")
+
+
+def _validate_reviewer_task_bases(
+    *,
+    checkout: Path,
+    manifest: ReviewerExperimentManifest,
+    task_ids: tuple[str, ...],
+) -> None:
+    """Fail before launch when frozen P0 metadata targets another task commit."""
+    for task_id in task_ids:
+        declared = task_base_commit(checkout / "tasks" / task_id)
+        frozen = manifest.patches[task_id].base_commit
+        if not git_object_ids_equivalent(frozen, declared):
+            raise ValueError(
+                f"P0 base commit for {task_id} does not match the active task Dockerfile"
+            )
+
+
 def _run_pier_process(command: list[str], process_env: dict[str, str]) -> None:
     """Wait for Pier cleanup after the terminal sends both processes Ctrl-C.
 
@@ -273,12 +485,93 @@ def run_pier(
     pier_executable: str = "pier",
     environment: str = "docker",
     dry_run: bool = False,
+    p0_manifest: Path | None = None,
+    workflow_timeout_sec: int | None = None,
+    few_shot_dir: Path | None = None,
+    review_arm: str = "E0",
+    review_contract_version: str | None = None,
+    review_prompt_version: str | None = None,
+    task_ids: tuple[str, ...] | None = None,
+    trial_cpus: int | None = None,
+    trial_memory_mb: int | None = None,
 ) -> Path:
     if agent_id not in DEEPSWE_AGENTS:
         raise ValueError(f"Unsupported agent: {agent_id}")
+    if agent_id in {"pi-review-repair", "pi-v5-review-repair"} and attempts != 1:
+        raise ValueError("The review workflow forbids automatic task-level retries")
+    if trial_cpus is not None and trial_cpus <= 0:
+        raise ValueError("trial_cpus must be positive when provided")
+    if trial_memory_mb is not None and trial_memory_mb <= 0:
+        raise ValueError("trial_memory_mb must be positive when provided")
     if not os.environ.get("DEEPSEEK_API_KEY") and not dry_run:
         raise RuntimeError("DEEPSEEK_API_KEY is not set. Use scripts/run_with_deepseek_key.sh.")
     resolved_checkout = validate_manifest_against_checkout(manifest, checkout)
+    reviewer_manifest = (
+        load_reviewer_experiment_manifest(p0_manifest) if p0_manifest is not None else None
+    )
+    if reviewer_manifest is not None:
+        if agent_id not in {"pi-review-repair", "pi-v5-review-repair"}:
+            raise ValueError("--p0-manifest requires a reviewer agent")
+        if (
+            reviewer_manifest.source_manifest_sha256
+            != hashlib.sha256(manifest.path.read_bytes()).hexdigest()
+        ):
+            raise ValueError("P0 source manifest does not match the active DeepSWE manifest")
+        if not set(reviewer_manifest.task_ids).issubset(manifest.task_ids):
+            raise ValueError("Reviewer tasks are not a subset of the active DeepSWE manifest")
+    available_task_ids = (
+        reviewer_manifest.task_ids if reviewer_manifest is not None else manifest.task_ids
+    )
+    selected_task_ids = task_ids if task_ids is not None else available_task_ids
+    if len(selected_task_ids) != len(set(selected_task_ids)):
+        raise ValueError("Selected DeepSWE task IDs must be unique")
+    unknown = sorted(set(selected_task_ids) - set(available_task_ids))
+    if not selected_task_ids or unknown:
+        detail = ": " + ", ".join(unknown) if unknown else ""
+        raise ValueError("Selected DeepSWE tasks are empty or outside the active manifest" + detail)
+    if reviewer_manifest is not None:
+        _validate_reviewer_task_bases(
+            checkout=resolved_checkout,
+            manifest=reviewer_manifest,
+            task_ids=selected_task_ids,
+        )
+    if agent_id == "pi-review-repair":
+        contract_version = resolve_review_contract_version(
+            review_arm, review_contract_version
+        )
+        prompt_version = resolve_review_prompt_version(
+            contract_version, review_arm, review_prompt_version
+        )
+    else:
+        contract_version = None
+        prompt_version = None
+        if review_arm != "E0":
+            raise ValueError("--review-arm requires --agent pi-review-repair")
+        if review_contract_version is not None:
+            raise ValueError(
+                "--review-contract-version requires --agent pi-review-repair"
+            )
+        if review_prompt_version is not None:
+            raise ValueError("--review-prompt-version requires --agent pi-review-repair")
+    frozen_few_shots = None
+    few_shot_source_dir = None
+    if agent_id == "pi-review-repair":
+        assert contract_version is not None
+        if few_shot_dir is None:
+            raise ValueError("The review workflow requires --few-shot-dir")
+        frozen_few_shots = load_frozen_few_shots(few_shot_dir)
+        if frozen_few_shots.contract_version != contract_version:
+            raise ValueError(
+                f"Few-shot contract {frozen_few_shots.contract_version} is incompatible "
+                f"with selected contract {contract_version}"
+            )
+        if frozen_few_shots.prompt_version != review_prompt_version:
+            raise ValueError(
+                "Few-shot prompt version does not match the selected reviewer prompt version"
+            )
+        few_shot_source_dir = frozen_few_shots.root
+    elif few_shot_dir is not None:
+        raise ValueError("--few-shot-dir is valid only with --agent pi-review-repair")
     executable = _resolve_pier_executable(pier_executable)
     if executable is None and not dry_run:
         raise RuntimeError(
@@ -286,8 +579,38 @@ def run_pier(
         )
     executable = executable or pier_executable
     resolved_jobs_dir = jobs_dir.expanduser().resolve()
-    resolved_name = job_name or default_job_name(agent_id, manifest)
+    if reviewer_manifest is None:
+        default_name = default_job_name(agent_id, manifest)
+    elif agent_id == "pi-v5-review-repair":
+        default_name = (
+            f"deepswe-v1.1-pi-v5-review-repair-random{len(reviewer_manifest.task_ids)}"
+        )
+    elif reviewer_manifest.raw.get("selection_method") == (
+        "source-manifest-all-tasks-with-development-exclusions-v1"
+    ):
+        default_name = "deepswe-v1.1-pi-review-repair-random60"
+    else:
+        default_name = "deepswe-v1.1-pi-review-repair-nearmiss16"
+    resolved_name = job_name or default_name
     job_dir = resolved_jobs_dir / resolved_name
+    run_record = resolved_jobs_dir / f"{resolved_name}.run.json"
+    if not dry_run:
+        resolved_jobs_dir.mkdir(parents=True, exist_ok=True)
+        if job_dir.exists():
+            raise ValueError(
+                f"Pier job directory already exists: {job_dir}. Choose a new --job-name "
+                "or use Pier's resume command directly."
+            )
+        if run_record.exists():
+            raise ValueError(
+                f"Pier run record already exists: {run_record}. Choose a new --job-name."
+            )
+        if frozen_few_shots is not None:
+            frozen_few_shots = freeze_few_shots(
+                frozen_few_shots,
+                resolved_jobs_dir / ".review_inputs" / frozen_few_shots.digest,
+            )
+    few_shot_dir = frozen_few_shots.root if frozen_few_shots is not None else None
     command = build_pier_command(
         pier_executable=executable,
         checkout=resolved_checkout,
@@ -300,6 +623,14 @@ def run_pier(
         attempts=attempts,
         max_turns=max_turns,
         environment=environment,
+        reviewer_manifest=reviewer_manifest,
+        workflow_timeout_sec=workflow_timeout_sec,
+        few_shot_dir=few_shot_dir,
+        few_shot_digest=(frozen_few_shots.digest if frozen_few_shots is not None else None),
+        review_arm=review_arm,
+        review_contract_version=contract_version,
+        review_prompt_version=review_prompt_version,
+        include_task_ids=selected_task_ids,
     )
     command = _apply_docker_cleanup_compat(command, environment)
     builder_name = (
@@ -313,18 +644,27 @@ def run_pier(
         "environment": environment,
         "max_turns": max_turns if agent_id == "hermes" else None,
         "turn_limit_policy": (
-            "agent-max-turns" if agent_id == "hermes" and max_turns is not None
+            "agent-max-turns"
+            if agent_id == "hermes" and max_turns is not None
             else "task-timeout-only"
         ),
         "manifest": str(manifest.path),
-        "task_ids": list(manifest.task_ids),
+        "task_ids": list(selected_task_ids),
         "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "pier_cleanup_compat": environment == "docker",
         "docker_builder": builder_name,
         "docker_builder_cache_policy": (
-            "prune-after-each-trial-remove-after-job" if builder_name else None
+            "retain-through-job-remove-after-job" if builder_name else None
+        ),
+        "docker_egress_proxy_prewarm": (
+            {"status": "planned", "max_attempts": 3} if builder_name else None
         ),
         "command": command,
+        "resource_isolation": {
+            "trial_cpus": trial_cpus,
+            "trial_memory_mb": trial_memory_mb,
+            "concurrency": num_workers,
+        },
     }
     if agent_id == "codex":
         metadata.update(
@@ -337,20 +677,64 @@ def run_pier(
             }
         )
     else:
-        metadata["agent_upstream_commit"] = AGENTS[agent_id].upstream_commit
+        upstream_agent = "pi" if agent_id in {"pi-review-repair", "pi-v5-review-repair"} else agent_id
+        metadata["agent_upstream_commit"] = AGENTS[upstream_agent].upstream_commit
+        if agent_id == "pi-review-repair":
+            metadata.update(
+                {
+                    "workflow": (f"solve-review-repair-once-v{contract_version.split('.')[0]}"),
+                    "experiment_arm": review_arm,
+                    "contract_version": contract_version,
+                    "prompt_version": prompt_version,
+                    "p0_manifest": (
+                        str(reviewer_manifest.path) if reviewer_manifest is not None else None
+                    ),
+                    "source_job_id": (
+                        reviewer_manifest.source_job_id if reviewer_manifest is not None else None
+                    ),
+                    "metric_task_ids": (
+                        list(reviewer_manifest.metric_task_ids or reviewer_manifest.task_ids)
+                        if reviewer_manifest is not None
+                        else None
+                    ),
+                    "excluded_task_ids": (
+                        list(reviewer_manifest.excluded_task_ids)
+                        if reviewer_manifest is not None
+                        else None
+                    ),
+                    "workflow_timeout_sec": workflow_timeout_sec,
+                    "agent_timeout_multiplier": REVIEW_AGENT_TIMEOUT_MULTIPLIER,
+                    "internal_role_timeouts_sec": {
+                        **REVIEW_ROLE_TIMEOUTS_SEC,
+                        **(
+                            {
+                                "solver": workflow_timeout_sec,
+                                "repair": workflow_timeout_sec,
+                            }
+                            if workflow_timeout_sec is not None
+                            else {}
+                        ),
+                    },
+                    "few_shot_dir": str(few_shot_dir),
+                    "few_shot_source_dir": str(few_shot_source_dir),
+                    "few_shot_mode": frozen_few_shots.mode,
+                    "few_shot_digest": frozen_few_shots.digest,
+                    "few_shot_file_sha256": dict(frozen_few_shots.file_sha256),
+                }
+            )
+        elif agent_id == "pi-v5-review-repair":
+            metadata.update(
+                {
+                    "workflow": "solve-review-repair-v5",
+                    "prompt_version": V5_PROMPT_VERSION,
+                    "controller_version": V5_CONTROLLER_VERSION,
+                    "p0_manifest": str(reviewer_manifest.path) if reviewer_manifest is not None else None,
+                }
+            )
     if dry_run:
         print(json.dumps(metadata, indent=2, ensure_ascii=False))
         return job_dir
 
-    resolved_jobs_dir.mkdir(parents=True, exist_ok=True)
-    if job_dir.exists():
-        raise ValueError(
-            f"Pier job directory already exists: {job_dir}. Choose a new --job-name "
-            "or use Pier's resume command directly."
-        )
-    run_record = resolved_jobs_dir / f"{resolved_name}.run.json"
-    if run_record.exists():
-        raise ValueError(f"Pier run record already exists: {run_record}. Choose a new --job-name.")
     process_env = os.environ.copy()
     project_root = Path(__file__).resolve().parents[3]
     python_path = process_env.get("PYTHONPATH")
@@ -360,12 +744,37 @@ def run_pier(
     if builder_name:
         process_env["BUILDX_BUILDER"] = builder_name
         process_env[DEEPSWE_BUILDER_ENV] = builder_name
+    process_env["EXTERNAL_EVAL_CONCURRENCY"] = str(num_workers)
+    if trial_cpus is not None:
+        process_env["EXTERNAL_EVAL_TRIAL_CPUS"] = str(trial_cpus)
+    if trial_memory_mb is not None:
+        process_env["EXTERNAL_EVAL_TRIAL_MEMORY_MB"] = str(trial_memory_mb)
 
     builder_created = False
     try:
         if builder_name:
             _create_dedicated_builder(builder_name)
             builder_created = True
+            try:
+                prewarm_attempts = _prewarm_egress_proxy(builder_name)
+            except EgressProxyPrewarmError as error:
+                metadata["docker_egress_proxy_prewarm"] = {
+                    "status": (
+                        "infra_failed_retryable"
+                        if error.retryable
+                        else "infra_failed_terminal"
+                    ),
+                    "attempts": error.attempts,
+                    "max_attempts": 3,
+                    "failure_class": "egress_proxy_prewarm",
+                }
+                atomic_write_json(run_record, metadata)
+                raise
+            metadata["docker_egress_proxy_prewarm"] = {
+                "status": "completed",
+                "attempts": prewarm_attempts,
+                "max_attempts": 3,
+            }
         atomic_write_json(run_record, metadata)
         _run_pier_process(command, process_env)
     finally:

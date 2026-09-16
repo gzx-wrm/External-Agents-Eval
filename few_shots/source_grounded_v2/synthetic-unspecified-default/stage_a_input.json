@@ -1,0 +1,18 @@
+{
+  "schema_version": "2.0",
+  "task_id": "synthetic-unspecified-default",
+  "issue": {
+    "title": "Configurable retry delay",
+    "body": "Add an optional retry_delay argument and apply the configured delay to retries. Preserve the existing public fallback when retry_delay is omitted. The exact numeric fallback is not prescribed."
+  },
+  "repository": {
+    "name": "synthetic/retry-client",
+    "base_commit": "1111111111111111111111111111111111111111",
+    "worktree": "/synthetic/retry-client",
+    "state": "base_only"
+  },
+  "source_policy": {
+    "path": "/contracts/source_policy.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}

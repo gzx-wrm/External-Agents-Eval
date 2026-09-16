@@ -264,6 +264,44 @@ def pi_jsonl_to_atif(
     return trajectory
 
 
+def extract_pi_final_assistant_text(transcript: str) -> str:
+    """Return text from Pi's final completed assistant message.
+
+    The whole transcript is parsed as JSONL.  Deliberately do not scan stdout
+    for a JSON-looking substring: the workflow contract is the final Pi
+    assistant message itself.
+    """
+    final_text: str | None = None
+    for line in transcript.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict) or event.get("type") != "message_end":
+            continue
+        message = event.get("message")
+        if not isinstance(message, dict) or message.get("role") != "assistant":
+            continue
+        parts = message.get("content")
+        if isinstance(parts, str):
+            final_text = parts
+            continue
+        if not isinstance(parts, list):
+            continue
+        texts = [
+            str(part["text"])
+            for part in parts
+            if isinstance(part, dict)
+            and part.get("type") == "text"
+            and part.get("text") is not None
+        ]
+        if texts:
+            final_text = "\n".join(texts)
+    if final_text is None:
+        raise ValueError("Pi transcript has no completed assistant text message")
+    return final_text
+
+
 def hermes_json_to_atif(
     payload: dict[str, Any],
     *,

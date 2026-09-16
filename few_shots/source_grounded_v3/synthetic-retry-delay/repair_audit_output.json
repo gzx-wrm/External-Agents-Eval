@@ -1,0 +1,11 @@
+{
+  "schema_version": "3.0",
+  "task_id": "synthetic-retry-delay",
+  "candidate_patch_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "assessment_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "effective_review_set_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "changed_paths": [],
+  "changes": [],
+  "unaddressed_requests": [],
+  "validation_summary": "No repair was requested or performed."
+}

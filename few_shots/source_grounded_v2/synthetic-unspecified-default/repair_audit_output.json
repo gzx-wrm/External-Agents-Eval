@@ -1,0 +1,12 @@
+{
+  "schema_version": "2.0",
+  "task_id": "synthetic-unspecified-default",
+  "p0_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "assessment_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "effective_review_set_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "additional_sources": [],
+  "changed_paths": [],
+  "changes": [],
+  "unaddressed_requests": [],
+  "validation_summary": "No repair is authorized for an approved assessment; P1 remains identical to P0."
+}
