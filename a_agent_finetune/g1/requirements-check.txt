@@ -1,0 +1,4 @@
+# CPU material and tokenization checks only; no model weights or CUDA runtime.
+jsonschema==4.23.0
+transformers==5.5.0
+jmespath==1.0.1

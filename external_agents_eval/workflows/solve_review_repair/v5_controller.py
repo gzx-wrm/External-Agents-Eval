@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import shutil
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -19,7 +20,10 @@ from typing import Any
 
 from .artifacts import ArtifactStore, sha256_bytes, sha256_json
 from .models import IndeterminateInvocationError, RoleName, RoleRunResult, TaskInput
-from .v5_config import V5Config
+from .build_gate import FAIL as GATE_FAIL
+from .build_gate import UNAVAILABLE as GATE_UNAVAILABLE
+from .build_gate import build_check_for_repair
+from .v5_config import V5_ROLE_STEP_LIMIT, V5Config
 from .v5_contracts import (
     V5ContractError,
     parse_json_object,
@@ -53,6 +57,7 @@ class V5Result:
     summary: dict[str, Any]
     freeze_id: str
     error: str | None = None
+    build_gate: dict[str, Any] | None = None
 
 
 class V5SnapshotMutationError(V5ContractError):
@@ -62,17 +67,24 @@ class V5SnapshotMutationError(V5ContractError):
 class V5Controller:
     """Run V5 with injected role and workspace adapters."""
 
-    def __init__(self, *, role_runner: Any, workspace: Any, artifacts: ArtifactStore, config: V5Config | None = None) -> None:
+    def __init__(self, *, role_runner: Any, workspace: Any, artifacts: ArtifactStore, config: V5Config | None = None, build_gate: Any = None) -> None:
         self.role_runner = role_runner
         self.workspace = workspace
         self.artifacts = artifacts
         self.config = config or V5Config()
         self.config.validate()
+        # V6.4 only: a deterministic build/collection gate supplied by the host.
+        self.build_gate = build_gate
+        if getattr(self.config, "build_gate_enabled", False) and build_gate is None:
+            raise V5ContractError("This workflow version requires a build gate executor")
         self.bundle_store = ImmutableBundleStore(
             self.artifacts.root / "v5", secrets=self.artifacts.secrets
         )
         self.state_store = V5StateStore(self.artifacts.root / "v5" / "workflow.sqlite")
         self._source_bindings: list[dict[str, Any]] = []
+        # V6.1 may keep a structurally valid ledger when its repository source
+        # anchors cannot be bound.  V5 leaves this empty and remains strict.
+        self._ledger_source_binding_errors: list[str] = []
         self._active_run_id: str | None = None
 
     def close(self) -> None:
@@ -90,8 +102,12 @@ class V5Controller:
         regression_worktree: str | None = None,
         repair_worktree: str | None = None,
         run_id: str | None = None,
+        reused_reviews: dict[str, dict[str, Any]] | None = None,
+        reused_summary: dict[str, Any] | None = None,
+        export_v6_stages: bool = False,
     ) -> V5Result:
         run_id = run_id or uuid.uuid4().hex
+        reused_reviews = reused_reviews or {}
         self._active_run_id = run_id
         p0_sha = sha256_bytes(candidate_patch)
         task_json = {"title": task.issue_title, "description": task.issue_body}
@@ -121,7 +137,7 @@ class V5Controller:
                     "summary": SUMMARY_OUTPUT_SCHEMA,
                 }
             ),
-            "review_note_skill_sha256": self._review_skill_digest(),
+            "review_note_skill_sha256": self._review_skill_digest(self._review_skill_name()),
             "model": self.config.model,
             "managed_delivery_sha256": sha256_json(managed_delivery),
             "limits": {
@@ -135,6 +151,16 @@ class V5Controller:
                 "no_compaction": self.config.no_compaction,
             },
         }
+        if self._gate_active():
+            binding["build_gate"] = self.build_gate.config()
+        if reused_reviews or reused_summary is not None:
+            binding["reused_stage_sha256"] = {
+                **{
+                    role: sha256_json(value["report"])
+                    for role, value in reused_reviews.items()
+                },
+                **({"S": sha256_json(reused_summary)} if reused_summary is not None else {}),
+            }
         created = self.state_store.create_run(run_id, binding)
         self.artifacts.write_bytes("outputs/v5-p0.patch", candidate_patch)
         if not created:
@@ -168,17 +194,13 @@ class V5Controller:
                 persisted_bindings = json.loads(
                     bindings_path.read_text(encoding="utf-8")
                 )
-                recomputed_bindings = await self._bind_ledger_sources(
+                await self._load_persisted_ledger_bindings(
                     ledger,
+                    persisted_bindings,
                     task=task_json,
-                    worktree=base_worktree,
+                    base_worktree=base_worktree,
                     base_commit=task.base_commit,
                 )
-                if persisted_bindings != recomputed_bindings:
-                    raise V5ContractError(
-                        "persisted V5 ledger source bindings failed integrity check"
-                    )
-                self._source_bindings = persisted_bindings
             else:
                 ledger = await self._build_ledger(
                     run_id,
@@ -221,35 +243,69 @@ class V5Controller:
                 batch_size=self.config.batch_size,
                 lane_deadline_sec=self.config.lane_deadline_sec,
             )
-            implementation_report, regression_report = await asyncio.gather(
-                self._run_lane(
-                    run_id=run_id,
-                    role="I",
-                    task=task_json,
-                    repository=repository,
-                    ledger=ledger,
-                    worktree=candidate_worktree,
-                    skill_path=skill_path,
-                    managed_delivery=managed_delivery,
+            async def review(
+                role: str, worktree: str
+            ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+                if role in reused_reviews:
+                    self.state_store.stop_lane(run_id, role, reason="reused")
+                    report = reused_reviews[role]["report"]
+                    artifacts = self._import_review_artifacts(reused_reviews[role])
+                else:
+                    report = await self._run_lane(
+                        run_id=run_id,
+                        role=role,
+                        task=task_json,
+                        repository=repository,
+                        ledger=ledger,
+                        worktree=worktree,
+                        skill_path=skill_path,
+                        managed_delivery=managed_delivery,
+                        base_commit=task.base_commit,
+                        baseline_patch=baseline_patch,
+                    )
+                    artifacts = self._review_artifacts(run_id, role)
+                self._persist_role_artifact(
+                    f"v5/exports/review-{role}.json",
+                    task_id=task.task_id,
+                    role=role,
                     base_commit=task.base_commit,
-                    baseline_patch=baseline_patch,
-                ),
-                self._run_lane(
-                    run_id=run_id,
-                    role="R",
-                    task=task_json,
-                    repository=repository,
-                    ledger=ledger,
-                    worktree=regression_worktree,
-                    skill_path=skill_path,
-                    managed_delivery=managed_delivery,
-                    base_commit=task.base_commit,
-                    baseline_patch=baseline_patch,
-                ),
+                    candidate_sha256=p0_sha,
+                    ledger_sha256=sha256_json(ledger),
+                    content=report,
+                )
+                if export_v6_stages:
+                    from .v6_fork import write_stage
+
+                    write_stage(
+                        self.artifacts.root,
+                        stage=role,
+                        task_id=task.task_id,
+                        base_commit=task.base_commit,
+                        baseline_sha256=sha256_bytes(baseline_patch),
+                        ledger_sha256=sha256_json(ledger),
+                        p0_sha256=p0_sha,
+                        report_sha256=sha256_json(report),
+                        review_artifacts=artifacts,
+                    )
+                return report, artifacts
+
+            gate_reports: dict[str, dict[str, Any]] = {}
+            if self._gate_active():
+                # Deterministic and model-free; I/R/S never see its result.
+                gate_reports["P0"] = await self._run_build_gate("P0", candidate_patch)
+            review_results = await asyncio.gather(
+                review("I", candidate_worktree),
+                review("R", regression_worktree),
+                return_exceptions=export_v6_stages,
             )
+            if export_v6_stages:
+                for outcome in review_results:
+                    if isinstance(outcome, BaseException):
+                        raise outcome
+            implementation_report, implementation_artifacts = review_results[0]
+            regression_report, regression_artifacts = review_results[1]
             reports: dict[str, dict[str, Any]] = {
-                "I": implementation_report,
-                "R": regression_report,
+                "I": implementation_report, "R": regression_report,
             }
             # A caller that does not provide a dedicated S worktree must still
             # prove that any incidental reviewer edits were restored.  This is
@@ -268,21 +324,7 @@ class V5Controller:
                         "reviewer modified its frozen worktree and it could not be "
                         "restored before summary"
                     )
-            for role, report in reports.items():
-                self._persist_role_artifact(
-                    f"v5/exports/review-{role}.json",
-                    task_id=task.task_id,
-                    role=role,
-                    base_commit=task.base_commit,
-                    candidate_sha256=p0_sha,
-                    ledger_sha256=sha256_json(ledger),
-                    content=report,
-                )
-            archived_review_artifacts = [
-                artifact
-                for role in ("I", "R")
-                for artifact in self._review_artifacts(run_id, role)
-            ]
+            archived_review_artifacts = implementation_artifacts + regression_artifacts
             snapshot = {
                 "run_id": run_id,
                 "ledger_sha256": sha256_json(ledger),
@@ -325,17 +367,25 @@ class V5Controller:
                 summary_input,
                 archived_review_artifacts=archived_review_artifacts,
             )
-            summary = await self._run_summary(
-                model_summary_input,
-                summary_worktree,
-                decision_context=decision_context,
-                freeze_id=freeze_id,
-                base_commit=task.base_commit,
-                baseline_patch=baseline_patch,
-                deadline_at=self.state_store.stage_deadline(
-                    run_id, "S", duration_sec=self.config.role_timeout_sec
-                ),
-            )
+            if reused_summary is None:
+                summary = await self._run_summary(
+                    model_summary_input,
+                    summary_worktree,
+                    decision_context=decision_context,
+                    freeze_id=freeze_id,
+                    base_commit=task.base_commit,
+                    baseline_patch=baseline_patch,
+                    deadline_at=self.state_store.stage_deadline(
+                        run_id, "S", duration_sec=self.config.role_timeout_sec
+                    ),
+                )
+            else:
+                summary = validate_summary_output(
+                    reused_summary,
+                    set(summary_input["required_decision_refs"]),
+                    decision_context=decision_context,
+                    allowed_sources=summary_input["allowed_sources"],
+                )
             self.artifacts.write_json("v5/summary.json", summary)
             self._persist_role_artifact(
                 "v5/exports/summary.json",
@@ -348,6 +398,9 @@ class V5Controller:
                 extra_bindings={"summary_freeze_id": freeze_id},
             )
             route = self._route(ledger, reports, summary, decision_context)
+            gate_override = False
+            if gate_reports.get("P0", {}).get("verdict") == GATE_FAIL and route != "repair":
+                route, gate_override = "repair", True
             decision_artifact = {
                 "route": route,
                 "review_complete": all(
@@ -357,7 +410,26 @@ class V5Controller:
                 "plan": summary,
                 "freeze_id": freeze_id,
             }
+            if self._gate_active():
+                decision_artifact["build_gate"] = {
+                    "P0": gate_reports["P0"].get("verdict"), "route_override": gate_override,
+                }
             self.artifacts.write_json("v5/decision.json", decision_artifact)
+            if export_v6_stages:
+                from .v6_fork import write_stage
+
+                write_stage(
+                    self.artifacts.root,
+                    stage="S",
+                    task_id=task.task_id,
+                    base_commit=task.base_commit,
+                    baseline_sha256=sha256_bytes(baseline_patch),
+                    ledger_sha256=sha256_json(ledger),
+                    p0_sha256=p0_sha,
+                    review_sha256={role: sha256_json(reports[role]) for role in ("I", "R")},
+                    summary_sha256=sha256_json(summary),
+                    route=route,
+                )
             repair_invocation_id = (
                 f"{run_id}.repair.{freeze_id}" if route == "repair" else None
             )
@@ -387,6 +459,16 @@ class V5Controller:
                             "preserve_refs": decision_artifact["preserve_refs"],
                             "reports": reports,
                         },
+                        prompt_version=self.config.prompt_version,
+                        budget=(
+                            {"minutes": max(1, int(self.config.role_timeout_sec) // 60),
+                             "steps": V5_ROLE_STEP_LIMIT}
+                            if self.config.prompt_version == "v5-6" else None
+                        ),
+                        build_check=(
+                            build_check_for_repair(gate_reports["P0"])
+                            if "P0" in gate_reports else None
+                        ),
                     ),
                     worktree=repair_worktree,
                     prefix="v5/repair",
@@ -412,6 +494,25 @@ class V5Controller:
                 except Exception as error:  # noqa: BLE001 - patch capture must safely fall back
                     p1 = candidate_patch
                     self.artifacts.event("V5_REPAIR_FALLBACK_P0", error=str(error))
+            gate_summary: dict[str, Any] | None = None
+            if self._gate_active():
+                delivered = "P0" if p1 == candidate_patch else "P1"
+                if route == "repair" and p1 != candidate_patch:
+                    gate_reports["P1"] = await self._run_build_gate("P1", p1)
+                    if (gate_reports["P0"].get("verdict") != GATE_FAIL
+                            and gate_reports["P1"].get("verdict") == GATE_FAIL):
+                        # Repair broke a buildable P0: deliver P0 unchanged.
+                        p1, delivered = candidate_patch, "P0"
+                        self.artifacts.event("V64_BUILD_GATE_REVERT_TO_P0", run_id=run_id)
+                gate_summary = {
+                    "schema_version": self.build_gate.config()["schema_version"],
+                    "P0": gate_reports["P0"].get("verdict"),
+                    "P1": gate_reports.get("P1", {}).get("verdict"),
+                    "route_override": gate_override,
+                    "delivered": delivered,
+                    "reports": {label: f"v5/build-gate/{label}.json" for label in gate_reports},
+                }
+                self.artifacts.write_json("v5/build-gate.json", gate_summary)
             self.artifacts.write_bytes("outputs/v5-p1.patch", p1)
             self.state_store.finish_delivery(
                 run_id,
@@ -429,9 +530,28 @@ class V5Controller:
                         repair_result is not None
                         and (repair_result.exit_code != 0 or repair_result.timed_out)
                     ),
+                    **({"build_gate": gate_summary} if gate_summary is not None else {}),
                 },
             )
-            return V5Result(run_id, route, p0_sha, p1, ledger, reports, summary, freeze_id)
+            if export_v6_stages:
+                from .v6_fork import write_stage
+
+                write_stage(
+                    self.artifacts.root,
+                    stage="P1",
+                    task_id=task.task_id,
+                    base_commit=task.base_commit,
+                    baseline_sha256=sha256_bytes(baseline_patch),
+                    ledger_sha256=sha256_json(ledger),
+                    p0_sha256=p0_sha,
+                    summary_sha256=sha256_json(summary),
+                    patch_sha256=sha256_bytes(p1),
+                    route=route,
+                )
+            return V5Result(
+                run_id, route, p0_sha, p1, ledger, reports, summary, freeze_id,
+                build_gate=gate_summary,
+            )
         except Exception as error:
             self.artifacts.event("V5_FAILED", error=str(error), run_id=run_id)
             raise
@@ -445,6 +565,8 @@ class V5Controller:
         deadline_at: str,
         managed_delivery: list[dict[str, Any]],
         baseline_patch: bytes = b"",
+        *,
+        allow_source_binding_errors: bool = False,
     ) -> dict[str, Any]:
         frozen_digest = await self._worktree_digest(
             worktree,
@@ -463,6 +585,7 @@ class V5Controller:
         last_error: Exception | None = None
         ledger: dict[str, Any] | None = None
         source_bindings: list[dict[str, Any]] | None = None
+        self._ledger_source_binding_errors = []
         for semantic_attempt in range(1, self.config.max_semantic_retries + 2):
             remaining_sec = self._deadline_remaining(deadline_at)
             if remaining_sec <= 0:
@@ -514,12 +637,21 @@ class V5Controller:
                         payload["open_questions"]
                     ),
                 }
-                candidate_bindings = await self._bind_ledger_sources(
-                    candidate_ledger,
-                    task=task,
-                    worktree=worktree,
-                    base_commit=repository["base_commit"],
-                )
+                try:
+                    candidate_bindings = await self._bind_ledger_sources(
+                        candidate_ledger,
+                        task=task,
+                        worktree=worktree,
+                        base_commit=repository["base_commit"],
+                    )
+                except Exception as error:
+                    if not allow_source_binding_errors:
+                        raise
+                    # The ledger is structurally usable even when one or more
+                    # source pointers are stale.  Keep the typed ledger and
+                    # expose the binding problem to V6.1 as a warning.
+                    self._ledger_source_binding_errors.append(str(error))
+                    candidate_bindings = []
                 ledger = candidate_ledger
                 source_bindings = candidate_bindings
                 break
@@ -533,6 +665,33 @@ class V5Controller:
         self._source_bindings = source_bindings
         self.artifacts.write_json("v5/source-bindings.json", self._source_bindings)
         return ledger
+
+    async def _load_persisted_ledger_bindings(
+        self,
+        ledger: dict[str, Any],
+        persisted_bindings: Any,
+        *,
+        task: dict[str, Any],
+        base_worktree: str,
+        base_commit: str,
+    ) -> None:
+        """Validate the persisted V5 source bindings.
+
+        V5 treats a mismatch as a protocol failure.  V6.1 overrides this hook
+        so a structurally valid but mechanically imperfect A ledger can still
+        reach Solver and the unchanged V5 review stages.
+        """
+        recomputed_bindings = await self._bind_ledger_sources(
+            ledger,
+            task=task,
+            worktree=base_worktree,
+            base_commit=base_commit,
+        )
+        if persisted_bindings != recomputed_bindings:
+            raise V5ContractError(
+                "persisted V5 ledger source bindings failed integrity check"
+            )
+        self._source_bindings = persisted_bindings
 
     async def _run_lane(
         self,
@@ -630,7 +789,7 @@ class V5Controller:
                     errors=retry_errors,
                     time_remaining_sec=remaining_sec,
                 )
-                prompt = reviewer_prompt(
+                prompt = self._lane_prompt(
                     task=task,
                     repository={
                         **repository,
@@ -652,6 +811,7 @@ class V5Controller:
                         "max_no_progress": self.config.max_no_progress,
                         "time_budget_sec": int(self.config.lane_deadline_sec),
                     },
+                    prompt_version=self.config.prompt_version,
                 )
                 invocation_id = f"{run_id}.{role}.{state['round']}.{attempt}"
                 input_payload = {
@@ -817,6 +977,14 @@ class V5Controller:
                 self.state_store.stop_lane(run_id, role, reason="max_no_progress")
         return self._report(run_id, role, integrity_events=integrity_events)
 
+    def _lane_prompt(self, **kwargs: Any) -> str:
+        # Extension point for later workflow versions; V5-V6.4 use reviewer_prompt.
+        return reviewer_prompt(**kwargs)
+
+    def _summary_prompt(self, summary_input: dict[str, Any], **kwargs: Any) -> str:
+        # Extension point for later workflow versions; V5-V6.4 use summary_prompt.
+        return summary_prompt(summary_input, **kwargs)
+
     async def _run_summary(
         self,
         summary_input: dict[str, Any],
@@ -833,7 +1001,7 @@ class V5Controller:
             base_commit,
             baseline_patch=baseline_patch,
         )
-        base_prompt = summary_prompt(
+        base_prompt = self._summary_prompt(
             summary_input,
             freeze_id=freeze_id,
             source_bindings=self._source_bindings,
@@ -1360,16 +1528,37 @@ class V5Controller:
             if errors:
                 raise V5ContractError("; ".join(errors))
 
+    def _gate_active(self) -> bool:
+        return bool(getattr(self.config, "build_gate_enabled", False)) and self.build_gate is not None
+
+    async def _run_build_gate(self, label: str, patch: bytes) -> dict[str, Any]:
+        path = self.artifacts.root / "v5" / "build-gate" / f"{label}.json"
+        if path.is_file():
+            cached = json.loads(path.read_text(encoding="utf-8"))
+            if cached.get("patch_sha256") == sha256_bytes(patch):
+                return cached
+        try:
+            report = await self.build_gate.check(label, patch)
+        except Exception as error:  # noqa: BLE001 - gate infrastructure is never a model signal
+            report = {"label": label, "patch_sha256": sha256_bytes(patch),
+                      "verdict": GATE_UNAVAILABLE, "error": f"{type(error).__name__}: {error}"}
+        self.artifacts.write_json(f"v5/build-gate/{label}.json", report)
+        self.artifacts.event("V64_BUILD_GATE", label=label, verdict=report.get("verdict"))
+        return report
+
+    def _review_skill_name(self) -> str:
+        return str(getattr(self.config, "review_skill", "v5-review-note"))
+
     async def _materialize_review_skill(self) -> str:
-        root = Path(__file__).with_name("skills") / "v5-review-note"
+        root = Path(__file__).with_name("skills") / self._review_skill_name()
         method = getattr(self.role_runner, "prepare_review_note_skill", None)
         if method is None:
             return str(root / "SKILL.md")
         return await method(root)
 
     @staticmethod
-    def _review_skill_digest() -> str:
-        root = Path(__file__).with_name("skills") / "v5-review-note"
+    def _review_skill_digest(name: str = "v5-review-note") -> str:
+        root = Path(__file__).with_name("skills") / name
         files = sorted(path for path in root.rglob("*") if path.is_file())
         if not files or not (root / "SKILL.md").is_file():
             raise V5ContractError("V5 review-note skill package is incomplete")
@@ -1759,6 +1948,30 @@ class V5Controller:
                 }
             )
         return artifacts
+
+    def _import_review_artifacts(self, reused: dict[str, Any]) -> list[dict[str, Any]]:
+        """Copy only the selected frozen evidence bundles into this run."""
+        source_root = Path(reused["source_root"]).resolve()
+        imported = []
+        for original in reused["review_artifacts"]:
+            source_bundle = Path(original["bundle_path"]).resolve()
+            if source_root not in source_bundle.parents:
+                raise V5ContractError("reused review bundle is outside its source run")
+            bundle_sha = original["bundle_sha256"]
+            destination = self.bundle_store.bundles / bundle_sha
+            if not destination.is_dir():
+                temporary = destination.with_name(f".{bundle_sha}.{uuid.uuid4().hex}.tmp")
+                shutil.copytree(source_bundle, temporary)
+                temporary.rename(destination)
+            item = dict(original)
+            item["bundle_path"] = str(destination)
+            for field in ("note_path", "trace_manifest_path", "materials_manifest_path"):
+                relative = Path(original[field]).resolve().relative_to(source_bundle)
+                item[field] = str(destination / relative)
+            if sha256_bytes(Path(item["note_path"]).read_bytes()) != item["note_sha256"]:
+                raise V5ContractError("reused review note has changed")
+            imported.append(item)
+        return imported
 
     @staticmethod
     def _required_decision_refs(ledger: dict[str, Any], reports: dict[str, dict[str, Any]]) -> list[str]:

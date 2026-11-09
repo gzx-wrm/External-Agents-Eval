@@ -201,6 +201,15 @@ def load_manifest(path: str | Path) -> DeepSWEManifest:
         raise ValueError(  # noqa: TRY004 - malformed file value, not a caller type error
             f"DeepSWE manifest has an invalid sampling seed: {resolved}"
         )
+    excluded = sampling.get("excluded_task_ids", [])
+    if (
+        not isinstance(excluded, list)
+        or any(not isinstance(task_id, str) or not task_id for task_id in excluded)
+        or len(excluded) != len(set(excluded))
+    ):
+        raise ValueError(f"DeepSWE manifest has invalid excluded_task_ids: {resolved}")
+    if set(excluded).intersection(task_ids):
+        raise ValueError(f"DeepSWE manifest selects an excluded task: {resolved}")
     fingerprint = population.get("fingerprint_sha256")
     if not isinstance(fingerprint, str) or len(fingerprint) != 64:
         raise ValueError(f"DeepSWE manifest has an invalid population fingerprint: {resolved}")
@@ -233,8 +242,24 @@ def validate_manifest_against_checkout(manifest: DeepSWEManifest, checkout: str 
         raise ValueError("DeepSWE population count differs from the manifest")
     if population_fingerprint(tasks) != manifest.population_fingerprint:
         raise ValueError("DeepSWE population fingerprint differs from the manifest")
+    sampling = manifest.raw.get("sampling") or {}
+    excluded = set(sampling.get("excluded_task_ids", []))
+    unknown_exclusions = sorted(excluded - task_ids)
+    if unknown_exclusions:
+        raise ValueError(
+            "Excluded tasks are absent from checkout: " + ", ".join(unknown_exclusions[:5])
+        )
+    candidates = [task for task in tasks if task.name not in excluded]
+    if "candidate_count" in sampling and sampling["candidate_count"] != len(candidates):
+        raise ValueError("DeepSWE candidate count differs from the manifest")
+    candidate_hash = hashlib.sha256("\n".join(task.name for task in candidates).encode()).hexdigest()
+    if (
+        "candidate_fingerprint_sha256" in sampling
+        and sampling["candidate_fingerprint_sha256"] != candidate_hash
+    ):
+        raise ValueError("DeepSWE candidate fingerprint differs from the manifest")
     expected_task_ids = select_task_ids(
-        tasks,
+        candidates,
         sample_size=manifest.sample_size,
         seed=manifest.sample_seed,
     )

@@ -1,0 +1,6 @@
+{
+  "default": {
+    "model": "zai/glm-5.3",
+    "base_url": "https://open.bigmodel.cn/api/paas/v4"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "task": {
+    "title": "Monitor snapshot capture (synthetic contract smoke)",
+    "description": "Add capture_snapshot to Monitor. Calling it freezes the current task state and returns an auto-incrementing snapshot ID starting at 1. Preserve Monitor's existing context-manager start/close behavior."
+  },
+  "base_root": "/work/base",
+  "patch_base": "base-commit",
+  "baseline_patch_sha256": null,
+  "managed_delivery": []
+}

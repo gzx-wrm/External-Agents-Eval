@@ -18,6 +18,7 @@ def _build_pi_command(
     *,
     model: str,
     prompt_path: str,
+    provider: str | None = None,
     tools: tuple[str, ...] = PI_BUILTIN_TOOLS,
     session_id: str | None = None,
     session_dir: str | None = None,
@@ -47,10 +48,14 @@ def _build_pi_command(
     # environment; keeping this builder free of an unknown flag is important
     # because Pi rejects unknown options before starting the session.
     del no_compaction
+    command_model = model
+    command_provider = provider or "deepseek"
+    if provider is None and "/" in model:
+        command_provider, command_model = model.split("/", 1)
     return (
         f"/opt/pi-runtime/bin/node {cli} "
-        f"--mode json {session_option} --no-approve --provider deepseek "
-        f"--model {shlex.quote(model)} {tool_option} "
+        f"--mode json {session_option} --no-approve --provider {shlex.quote(command_provider)} "
+        f"--model {shlex.quote(command_model)} {tool_option} "
         f"-p < {shlex.quote(prompt_path)}"
     )
 
@@ -132,14 +137,19 @@ test "$(npm view @earendil-works/pi-coding-agent@0.84.2 version)" = "0.84.2"
         context: AgentContext,
     ) -> None:
         prompt_path = await self.upload_instruction(instruction, environment)
+        model_spec = self.model_spec_for_role("solver")
+        pi_config_dir = await self.prepare_pi_config(
+            environment, model_spec, config_key="solver"
+        )
         command = _build_pi_command(
-            model=self.runtime_model,
+            model=model_spec.model,
+            provider=model_spec.provider,
             prompt_path=prompt_path,
         )
         env = self.agent_env(environment)
         env.update(
             {
-                "PI_CODING_AGENT_DIR": "/external_eval/pi_config",
+                "PI_CODING_AGENT_DIR": pi_config_dir,
                 "PI_OFFLINE": "1",
                 "PI_SKIP_VERSION_CHECK": "1",
                 "PI_TELEMETRY": "0",
@@ -161,13 +171,13 @@ test "$(npm view @earendil-works/pi-coding-agent@0.84.2 version)" = "0.84.2"
         trajectory = pi_jsonl_to_atif(
             transcript,
             instruction=instruction,
-            model=self.runtime_model,
+            model=model_spec.model,
             agent_version=self.version(),
         )
         self.save_trajectory(trajectory, context)
         context.metadata = {
-            "provider": "deepseek",
-            "model": self.runtime_model,
+            **model_spec.to_metadata(),
+            "stage_models": self.stage_model_config.to_metadata(),
             "process_exit_code": result.return_code,
         }
         if result.return_code != 0:

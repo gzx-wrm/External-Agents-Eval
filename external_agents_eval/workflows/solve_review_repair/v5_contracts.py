@@ -346,7 +346,8 @@ def validate_review_batch(
     done: bool | None = None,
 ) -> dict[str, Any]:
     payload = validate_review_batch_shape(payload)
-    if role not in {"I", "R", "implementation", "regression"}:
+    # D (V6.5 disambiguation lane) shares the I/R batch contract unchanged.
+    if role not in {"I", "R", "D", "implementation", "regression", "disambiguation"}:
         raise V5ContractError(f"unsupported reviewer role: {role}")
     total = len(payload["new_targets"]) + len(payload["assessments"]) + len(payload["revisit_target_ids"])
     if total > batch_size:

@@ -1,0 +1,310 @@
+{
+  "experiment": "G1",
+  "material_version": 2,
+  "checked_at": "2026-10-09T05:39:16.746048+00:00",
+  "evaluation_type": "offline_historical_base_rescore",
+  "source_run": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1",
+  "reward_sha256": "bea203170717ac7d5bb5addc79ddb5115322b26715dacd07198277cc3c6a58bc",
+  "summary": {
+    "tasks": 14,
+    "strict_delivered": 1,
+    "strict_delivery_rate": 0.07142857142857142,
+    "relaxed_delivered": 9,
+    "relaxed_delivery_rate": 0.6428571428571429,
+    "mean_reward": 0.6428571428571429,
+    "newly_delivered": 8,
+    "reasons": {
+      "delivered": 9,
+      "length": 3,
+      "timeout": 2
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "abs-stepped-slices",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 145.004986,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "invalid_json",
+        "detail": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "5af37609830bb5ffb6f0f74e49d77c2ab31a695ba93fc8fce766151f9dde95ec",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/abs-stepped-slices/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/abs-stepped-slices/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "aiomonitor-task-snapshots-diff",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 123.582422,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "invalid_json",
+        "detail": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "ad0f19bbc409bcb78b6efe649d9f4c4b353648c9d8e9269b77e7706c1a57ac6c",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/aiomonitor-task-snapshots-diff/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/aiomonitor-task-snapshots-diff/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "cliffy-config-file-parsing",
+      "historical_termination": "length",
+      "pi_stop_reason": "length",
+      "exit_code": 0,
+      "elapsed_sec": 275.852247,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "length",
+        "detail": ""
+      },
+      "relaxed_reward": {
+        "reward": 0.0,
+        "reason": "length",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "fe18013d93d22f4f2a70344d30c00fe62d2ef29189ae5d25ccbda81fbd9c92b0",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/cliffy-config-file-parsing/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/cliffy-config-file-parsing/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "expr-try-catch-errors",
+      "historical_termination": "timeout",
+      "pi_stop_reason": "toolUse",
+      "exit_code": 124,
+      "elapsed_sec": 3599.397537,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "timeout",
+        "detail": ""
+      },
+      "relaxed_reward": {
+        "reward": 0.0,
+        "reason": "timeout",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/expr-try-catch-errors/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/expr-try-catch-errors/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "fastapi-implicit-head-options",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 207.400334,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "invalid_json",
+        "detail": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "776d3c751518472b0168ae7979f37b3f6ceb378c0c95c7b98fdcbf3c15c66cec",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/fastapi-implicit-head-options/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/fastapi-implicit-head-options/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "gql-incremental-graphql-delivery",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 239.682795,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "invalid_json",
+        "detail": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "699aa8be2a780df1a6227eeb6d50841e8c5995a93d8ad234837a8af55830d0f0",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/gql-incremental-graphql-delivery/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/gql-incremental-graphql-delivery/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "meriyah-explicit-resource-declarations",
+      "historical_termination": "timeout",
+      "pi_stop_reason": "toolUse",
+      "exit_code": 124,
+      "elapsed_sec": 3599.53432,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "timeout",
+        "detail": ""
+      },
+      "relaxed_reward": {
+        "reward": 0.0,
+        "reason": "timeout",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/meriyah-explicit-resource-declarations/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/meriyah-explicit-resource-declarations/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "numba-stencil-boundary-modes",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 119.274054,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "invalid_json",
+        "detail": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "4175dfd1f58b5321794e84545df6828e9aa8e761f36b88490d910c2095752139",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/numba-stencil-boundary-modes/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/numba-stencil-boundary-modes/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "obsidian-linter-auto-table-of-contents",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 78.736639,
+      "strict_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "ba9b2a6a5402e5c94e12a8fa482437e40595c477070f92a23609fcc9e6c41e96",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/obsidian-linter-auto-table-of-contents/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/obsidian-linter-auto-table-of-contents/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "sqlite-utils-safe-import-checkpoints",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 140.396425,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "invalid_json",
+        "detail": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "eab19a2e5d169938ab05898a2baf0501acc56b095e2ca946f8443346caca73e6",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/sqlite-utils-safe-import-checkpoints/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/sqlite-utils-safe-import-checkpoints/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "tengo-callable-instance-isolation",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 125.542123,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "invalid_json",
+        "detail": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "50a24a39046c0db723a5b99d988a204126ca20133d7db8e46a99b8d21b8cfe30",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/tengo-callable-instance-isolation/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/tengo-callable-instance-isolation/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "testem-per-launcher-reports",
+      "historical_termination": "length",
+      "pi_stop_reason": "length",
+      "exit_code": 0,
+      "elapsed_sec": 1162.658814,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "length",
+        "detail": ""
+      },
+      "relaxed_reward": {
+        "reward": 0.0,
+        "reason": "length",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "fe18013d93d22f4f2a70344d30c00fe62d2ef29189ae5d25ccbda81fbd9c92b0",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/testem-per-launcher-reports/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/testem-per-launcher-reports/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "ts-pattern-match-each",
+      "historical_termination": "length",
+      "pi_stop_reason": "length",
+      "exit_code": 0,
+      "elapsed_sec": 398.581535,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "length",
+        "detail": ""
+      },
+      "relaxed_reward": {
+        "reward": 0.0,
+        "reason": "length",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "fe18013d93d22f4f2a70344d30c00fe62d2ef29189ae5d25ccbda81fbd9c92b0",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/ts-pattern-match-each/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/ts-pattern-match-each/v5/specification/attempt-1/result.json"
+    },
+    {
+      "task_id": "yaegi-go-embed-directives",
+      "historical_termination": "stop",
+      "pi_stop_reason": "stop",
+      "exit_code": 0,
+      "elapsed_sec": 181.651022,
+      "strict_reward": {
+        "reward": 0.0,
+        "reason": "invalid_json",
+        "detail": "Expecting value: line 1 column 1 (char 0)"
+      },
+      "relaxed_reward": {
+        "reward": 1.0,
+        "reason": "delivered",
+        "detail": ""
+      },
+      "raw_final_answer_sha256": "b50f21aefb16d38286d263743baab07e1abbb17096c64f30a5bdb84058880673",
+      "trajectory_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/yaegi-go-embed-directives/v5/specification/attempt-1/pi.jsonl",
+      "result_source": "/Users/gzx/code/python/external_agents_eval/a_agent_finetune/runs/qwen35-9b-base-heldout14-20261006-r1/groups/base/tasks/yaegi-go-embed-directives/v5/specification/attempt-1/result.json"
+    }
+  ],
+  "notes": [
+    "Scores use only the original final assistant message, not extracted/corrected historical output.",
+    "Historical timeout/length termination is preserved. No current G1 trajectory replay was performed.",
+    "Old Pi/vLLM context and generation budgets differ from G1; these scores are not a same-environment G1 baseline.",
+    "Reward checks structural delivery, not semantic coverage or citation authenticity."
+  ]
+}

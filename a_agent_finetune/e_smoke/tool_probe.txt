@@ -1,0 +1,14 @@
+This is a transport smoke test, not a benchmark evaluation. Inspect only the
+frozen public repository at /work/base. Do not modify files or use the network.
+
+First use grep to locate the Python declaration of class Monitor. Then use read
+to inspect that declaration and a small surrounding section. You must use both
+tools and base your final answer on their actual results.
+
+Return only a JSON object with these fields:
+- path: the repository-relative path containing the class declaration;
+- line: the exact one-based line number of the class declaration;
+- class_name: the class name you read;
+- method_names: two method names you actually saw inside that class.
+
+Do not guess a path, line number, or method name.

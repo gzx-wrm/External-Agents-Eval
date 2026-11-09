@@ -1,0 +1,85 @@
+{
+  "experiment": "G1",
+  "checked_at": "2026-10-09T05:39:16.746048+00:00",
+  "material_verification": {
+    "experiment": "G1",
+    "verified": true,
+    "counts": {
+      "train": 13,
+      "validation": 3,
+      "test": 14
+    },
+    "checked_files": 58
+  },
+  "unit_tests": {
+    "passed": 37,
+    "failed": 0,
+    "scope": "Extracted complete JSON delivery reward, unchanged failure termination, read-only tools, exact-token multi-turn rollout, disjoint task inputs"
+  },
+  "real_tokenizer_checks": {
+    "pinned_tokenizer_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "tasks_checked": 30,
+    "initial_prompt_ids_match_original": true,
+    "initial_prompt_tokens_min": 2227,
+    "initial_prompt_tokens_max": 2921,
+    "xml_tool_arguments_parsed": true,
+    "real_tokenizer_tool_suffix_valid": true,
+    "sampled_tokens_preserved": true,
+    "observation_tokens_masked": true,
+    "synthetic_tool_to_ledger_reward": 1.0,
+    "model_weights_loaded": false,
+    "model_inference_performed": false
+  },
+  "archive_checks": {
+    "archives_verified": 30,
+    "snapshots_extracted": 30,
+    "files": 22604,
+    "bytes": 99010162,
+    "gitlinks_not_materialized": {
+      "adaptix-name-mapping-aliases": [
+        "benchmarks/release_data"
+      ],
+      "tomlkit-toml-table-converters": [
+        "tests/toml-test"
+      ]
+    }
+  },
+  "python_syntax_checked": true,
+  "gpu_training_started": false,
+  "gpu_model_weights_loaded": false,
+  "pending_gpu_checks": [
+    "Pinned 9B text-backbone weight loading",
+    "Actual rollout rewards and mixed-group frequency",
+    "GRPO backward/optimizer update",
+    "Checkpoint reload in another process",
+    "A800 peak memory and throughput"
+  ],
+  "source_api_review": {
+    "trl": "1.15.0",
+    "transformers": "5.5.0",
+    "g1_generate_boundary": "eight-field GRPOTrainer._generate return; teacher/reference scores absent",
+    "loading_info": "Transformers 5.5 key sets normalized to JSON lists"
+  },
+  "note": "Synthetic tokenization checks do not demonstrate model inference or training success.",
+  "material_version": 4,
+  "base_historical_rescore": {
+    "report": "checks/base_heldout14_reward_v2.json",
+    "tasks": 14,
+    "strict_delivered": 1,
+    "strict_delivery_rate": 0.07142857142857142,
+    "relaxed_delivered": 9,
+    "relaxed_delivery_rate": 0.6428571428571429,
+    "mean_reward": 0.6428571428571429,
+    "newly_delivered": 8,
+    "reasons": {
+      "delivered": 9,
+      "length": 3,
+      "timeout": 2
+    }
+  },
+  "loss_recording": {
+    "raw_metrics": "metrics.jsonl",
+    "training_csv": "loss.csv",
+    "curve": "loss_curve.png"
+  }
+}

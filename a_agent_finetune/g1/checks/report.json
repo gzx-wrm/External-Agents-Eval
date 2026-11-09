@@ -1,0 +1,42 @@
+{
+  "experiment": "G1",
+  "material_version": 5,
+  "recorded_at": "2026-10-09T08:43:45.814560+00:00",
+  "material_verification": {
+    "verified": true,
+    "checked_files": 58,
+    "counts": {
+      "train": 13,
+      "validation": 3,
+      "test": 14
+    }
+  },
+  "python_syntax_checked": true,
+  "additional_tests_run": false,
+  "reason": "User explicitly requested direct training without further tests.",
+  "historical_cpu_checks": {
+    "material_version": 4,
+    "unit_tests_passed": 37,
+    "not_rerun_for_version5": true,
+    "record": "checks/report_v4_before128k.json"
+  },
+  "gpu_capacity_check": {
+    "synthetic_capacity_check": true,
+    "actual_training_group": false,
+    "status": "completed",
+    "trajectory_tokens": 131072,
+    "context_tokens": 133496,
+    "finite_gradients": true,
+    "watched_lora_B_max_change": 4.999982138542691e-06,
+    "peak_allocated_gib": 57.40543985366821,
+    "peak_cgroup_memory_gib": 95.07573699951172,
+    "source_record": "runs/a800-20261009/validation-128k-cpuoffload-r1/capacity-result.json"
+  },
+  "real_training_not_yet_completed": true,
+  "checkpoint_reload_not_yet_verified": true,
+  "loss_recording": {
+    "raw_metrics": "metrics.jsonl",
+    "training_csv": "loss.csv",
+    "curve": "loss_curve.png"
+  }
+}

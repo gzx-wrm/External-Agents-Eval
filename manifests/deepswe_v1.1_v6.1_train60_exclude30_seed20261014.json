@@ -1,0 +1,637 @@
+{
+  "schema_version": 1,
+  "benchmark": "deepswe",
+  "benchmark_revision": "1.1",
+  "source": {
+    "repository": "https://github.com/datacurve-ai/deep-swe.git",
+    "commit": "0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea"
+  },
+  "sampling": {
+    "algorithm": "sorted-task-ids/python-random-shuffle-v1",
+    "seed": 20261014,
+    "size": 60,
+    "candidate_count": 83,
+    "candidate_fingerprint_sha256": "d93b56b22ebc479815dae8ea043308fb904a134b6ca3f52c9f95d67f5eda3144",
+    "exclusion_rule": "exclude-exact-task-ids-from-existing-v6.1-deepseek-flash-30-task-pool",
+    "excluded_task_ids": [
+      "abs-stepped-slices",
+      "adaptix-name-mapping-aliases",
+      "aiomonitor-task-snapshots-diff",
+      "anko-typed-variable-bindings",
+      "arktype-json-schema-refs-dependencies",
+      "boa-hierarchical-evaluation-cancellation",
+      "cliffy-config-file-parsing",
+      "expr-try-catch-errors",
+      "fastapi-deprecation-response-headers",
+      "fastapi-implicit-head-options",
+      "gql-incremental-graphql-delivery",
+      "langchain-request-coalescing",
+      "meriyah-explicit-resource-declarations",
+      "mobly-grouped-test-barriers",
+      "numba-stencil-boundary-modes",
+      "obsidian-linter-auto-table-of-contents",
+      "obsidian-linter-link-format-conversion",
+      "optique-conditional-option-dependencies",
+      "scriggo-method-declarations",
+      "sql-formatter-bigquery-pipe-formatting",
+      "sqlite-utils-safe-import-checkpoints",
+      "tengo-callable-instance-isolation",
+      "termenv-preserve-ansi-resets",
+      "testem-per-launcher-reports",
+      "tomlkit-toml-table-converters",
+      "ts-pattern-match-each",
+      "valibot-recursive-schema-composition",
+      "vulture-persistent-analysis-cache",
+      "yaegi-go-embed-directives",
+      "yjs-map-conflict-detection"
+    ]
+  },
+  "population": {
+    "task_count": 113,
+    "fingerprint_sha256": "959cbdcc9c12383699b98969f191b8cd6b78c875110caccfb96d0866ea8179cc"
+  },
+  "task_count": 60,
+  "task_ids": [
+    "claude-code-by-agents-recursive-delegation",
+    "vitest-duration-sharding",
+    "dynamodb-toolbox-conditional-attribute-requirements",
+    "ipython-session-bundle-replay",
+    "python-statemachine-state-data-scoping",
+    "quill-shared-toolbar-focus",
+    "participle-grammar-conflict-analysis",
+    "igel-persist-feature-schema",
+    "bandit-incremental-cache-control",
+    "eicrud-keyset-pagination-cursor",
+    "superjson-error-stack-serialization",
+    "pest-character-class-coalescing",
+    "mnamer-daemon-watch-lifecycle",
+    "drizzle-orm-window-function-builders",
+    "httpx-multipart-response-parsing",
+    "clack-async-autocomplete-options",
+    "kea-atomic-signal-selectors",
+    "scc-bounded-memory-spilling",
+    "koota-deferred-mutation-buffer",
+    "tengo-destructuring-bindings",
+    "wazero-multi-module-snapshots",
+    "actionlint-action-pinning-lint",
+    "csstree-shorthand-expansion-compression",
+    "cattrs-partial-structuring-recovery",
+    "koota-query-predicates",
+    "true-myth-iterable-collection-combinators",
+    "happy-dom-abort-pending-body-reads",
+    "helm-unified-manifest-stream",
+    "prometheus-transactional-reload-status",
+    "psd-tools-blend-range-api",
+    "anko-default-function-arguments",
+    "ofetch-per-origin-circuit-breaker",
+    "kysely-window-grouping-helpers",
+    "kombu-virtual-queue-dead-lettering",
+    "obsidian-linter-scoped-ignore-markers",
+    "effect-sse-httpapi-streaming",
+    "go-genai-streamed-function-args",
+    "arcane-drift-detection-baselines",
+    "abs-module-cache-flags",
+    "bandit-interprocedural-taint-checks",
+    "go-git-worktree-merge-conflicts",
+    "pwntools-tube-multiplexing",
+    "dateutil-rfc5545-timezone-interop",
+    "geo-shapeindex-serialization",
+    "awilix-async-container-initialization",
+    "dasel-html-document-format",
+    "katex-multicolumn-array-spans",
+    "happy-dom-deterministic-intersectionobserver",
+    "mashumaro-flattened-dataclass-fields",
+    "dynamodb-toolbox-lazy-recursive-schemas",
+    "pebble-durability-wait-apis",
+    "goreleaser-retry-publish-auditing",
+    "opa-rego-rule-profiling",
+    "kcp-go-multiplexed-kcp-streams",
+    "testem-bail-on-test-failure",
+    "narwhals-rolling-window-suite",
+    "httpx-streaming-json-iteration",
+    "textual-richlog-follow-state",
+    "fd-deterministic-multi-key-sorting",
+    "task-task-graph-export"
+  ],
+  "selection_fingerprint_sha256": "5756257167c1a4222ac0e1bb60f20d6c0496e5ccdf8cd81036af733c0b0287ae",
+  "purpose": "training_only",
+  "split": {
+    "train": [
+      "claude-code-by-agents-recursive-delegation",
+      "vitest-duration-sharding",
+      "dynamodb-toolbox-conditional-attribute-requirements",
+      "ipython-session-bundle-replay",
+      "python-statemachine-state-data-scoping",
+      "quill-shared-toolbar-focus",
+      "participle-grammar-conflict-analysis",
+      "igel-persist-feature-schema",
+      "bandit-incremental-cache-control",
+      "eicrud-keyset-pagination-cursor",
+      "superjson-error-stack-serialization",
+      "pest-character-class-coalescing",
+      "mnamer-daemon-watch-lifecycle",
+      "drizzle-orm-window-function-builders",
+      "httpx-multipart-response-parsing",
+      "clack-async-autocomplete-options",
+      "kea-atomic-signal-selectors",
+      "scc-bounded-memory-spilling",
+      "koota-deferred-mutation-buffer",
+      "tengo-destructuring-bindings",
+      "wazero-multi-module-snapshots",
+      "actionlint-action-pinning-lint",
+      "csstree-shorthand-expansion-compression",
+      "cattrs-partial-structuring-recovery",
+      "koota-query-predicates",
+      "true-myth-iterable-collection-combinators",
+      "happy-dom-abort-pending-body-reads",
+      "helm-unified-manifest-stream",
+      "prometheus-transactional-reload-status",
+      "psd-tools-blend-range-api",
+      "anko-default-function-arguments",
+      "ofetch-per-origin-circuit-breaker",
+      "kysely-window-grouping-helpers",
+      "kombu-virtual-queue-dead-lettering",
+      "obsidian-linter-scoped-ignore-markers",
+      "effect-sse-httpapi-streaming",
+      "go-genai-streamed-function-args",
+      "arcane-drift-detection-baselines",
+      "abs-module-cache-flags",
+      "bandit-interprocedural-taint-checks",
+      "go-git-worktree-merge-conflicts",
+      "pwntools-tube-multiplexing",
+      "dateutil-rfc5545-timezone-interop",
+      "geo-shapeindex-serialization",
+      "awilix-async-container-initialization",
+      "dasel-html-document-format",
+      "katex-multicolumn-array-spans",
+      "happy-dom-deterministic-intersectionobserver",
+      "mashumaro-flattened-dataclass-fields",
+      "dynamodb-toolbox-lazy-recursive-schemas",
+      "pebble-durability-wait-apis",
+      "goreleaser-retry-publish-auditing",
+      "opa-rego-rule-profiling",
+      "kcp-go-multiplexed-kcp-streams",
+      "testem-bail-on-test-failure",
+      "narwhals-rolling-window-suite",
+      "httpx-streaming-json-iteration",
+      "textual-richlog-follow-state",
+      "fd-deterministic-multi-key-sorting",
+      "task-task-graph-export"
+    ],
+    "validation": [],
+    "test": []
+  },
+  "excluded_pool": {
+    "path": "a_agent_finetune/data/e_teacher_trajectory_30_human_latest_v1/manifest.json",
+    "sha256": "839cf2edf2af3b70bbcee6063501ed13bc4d618b1c95d06583fd152e26cdc867",
+    "source_batch": "deepswe-v1.1-pi-v6.1-deepseek-flash-random30-from-random60-seed20260922-w4",
+    "task_count": 30
+  },
+  "remaining_task_ids": [
+    "bandit-structured-nosec-directives",
+    "etree-xml-diff-patch",
+    "go-critic-doc-link-checker",
+    "helm-array-merge-strategies",
+    "httpx-deterministic-cookie-store",
+    "ink-grid-box-layout",
+    "kgateway-consistent-hash-policy",
+    "kombu-single-active-consumer-priority",
+    "koota-composite-trait-aspects",
+    "koota-entity-snapshot-rollback",
+    "koota-pair-relation-tracking",
+    "onedump-dump-encryption-pipeline",
+    "opa-template-string-reconstruction",
+    "oxvg-structural-selector-preservation",
+    "prometheus-typed-label-sorting",
+    "query-persist-restored-query-state",
+    "returns-validated-error-accumulation",
+    "skrub-duration-encoding",
+    "sqlfmt-create-table-ddl-formatting",
+    "textual-kitty-key-phases",
+    "updo-policy-alerting",
+    "wasmi-trap-coredumps",
+    "ytt-jsonpath-query-api"
+  ],
+  "tasks": [
+    {
+      "task_id": "claude-code-by-agents-recursive-delegation",
+      "repository_url": "https://github.com/baryhuang/claude-code-by-agents",
+      "base_commit": "5e0a2247d446c49a9951a06bb83b6e956dc7eb41",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "vitest-duration-sharding",
+      "repository_url": "https://github.com/vitest-dev/vitest.git",
+      "base_commit": "647e6ade3b99523e3a0387a65fccfe918c331236",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "dynamodb-toolbox-conditional-attribute-requirements",
+      "repository_url": "https://github.com/dynamodb-toolbox/dynamodb-toolbox",
+      "base_commit": "1f2a18664f8aded292707fcafb01ff15ea33d3b8",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "ipython-session-bundle-replay",
+      "repository_url": "https://github.com/ipython/ipython",
+      "base_commit": "0bb317d10fdcb3aa13beb1031d5f10e5b821203b",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "python-statemachine-state-data-scoping",
+      "repository_url": "https://github.com/fgmacedo/python-statemachine",
+      "base_commit": "8d17ba9f6ba8420cf05fddb94013bc221ed9a222",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "quill-shared-toolbar-focus",
+      "repository_url": "https://github.com/slab/quill",
+      "base_commit": "539cbffd0a13b18e9c65eb84dd35e6596e403158",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "participle-grammar-conflict-analysis",
+      "repository_url": "https://github.com/alecthomas/participle.git",
+      "base_commit": "1051d4767b5a469936daf5f1cebb63da6c9fb776",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "igel-persist-feature-schema",
+      "repository_url": "https://github.com/nidhaloff/igel",
+      "base_commit": "bf4544d6c86ab4ace21254cb38a011ce3e845700",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "bandit-incremental-cache-control",
+      "repository_url": "https://github.com/PyCQA/bandit.git",
+      "base_commit": "765f00d3f202f83f61d03f882f80a2d5142d81f8",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "eicrud-keyset-pagination-cursor",
+      "repository_url": "https://github.com/eicrud/eicrud",
+      "base_commit": "68dafce",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "superjson-error-stack-serialization",
+      "repository_url": "https://github.com/flightcontrolhq/superjson.git",
+      "base_commit": "010c4bdb4b8758844fd44eacf38e42b22eba8aea",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "pest-character-class-coalescing",
+      "repository_url": "https://github.com/pest-parser/pest",
+      "base_commit": "79dd30d11aab6f0fba3cd79bd48f456209b966b3",
+      "language": "rust",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "mnamer-daemon-watch-lifecycle",
+      "repository_url": "https://github.com/jkwill87/mnamer",
+      "base_commit": "73f5b537c8cad998e8e6d6bc40ad60e2e23bf268",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "drizzle-orm-window-function-builders",
+      "repository_url": "https://github.com/drizzle-team/drizzle-orm",
+      "base_commit": "e8e6edfef5ca69c6188d320388ad440265911057",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "httpx-multipart-response-parsing",
+      "repository_url": "https://github.com/encode/httpx",
+      "base_commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "clack-async-autocomplete-options",
+      "repository_url": "https://github.com/bombshell-dev/clack",
+      "base_commit": "8a96e2dcd7f821d1250b58cf71c327679f94de25",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "kea-atomic-signal-selectors",
+      "repository_url": "https://github.com/keajs/kea.git",
+      "base_commit": "6c7ebba57821989733a11d6f3888816658584d97",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "scc-bounded-memory-spilling",
+      "repository_url": "https://github.com/boyter/scc.git",
+      "base_commit": "bc2796e01998ebc2d40818323f93113aed2542ea",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "koota-deferred-mutation-buffer",
+      "repository_url": "https://github.com/pmndrs/koota",
+      "base_commit": "31cbe9a1a26b3822a6c82ad50132508087cd24bc",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "tengo-destructuring-bindings",
+      "repository_url": "https://github.com/d5/tengo",
+      "base_commit": "3cad0da7a51b1206c6f01e3f4fbb44b976d5275c",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "wazero-multi-module-snapshots",
+      "repository_url": "https://github.com/wazero/wazero.git",
+      "base_commit": "3ec1e028c8cbda984a71bf72321008723ebdcb51",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "actionlint-action-pinning-lint",
+      "repository_url": "https://github.com/rhysd/actionlint",
+      "base_commit": "0bdc95715fa58f64e3fd6e63b0f89be8733cbbab",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "csstree-shorthand-expansion-compression",
+      "repository_url": "https://github.com/csstree/csstree",
+      "base_commit": "88e3d965c0b1628642a30a841745b410d6835052",
+      "language": "javascript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "cattrs-partial-structuring-recovery",
+      "repository_url": "https://github.com/python-attrs/cattrs",
+      "base_commit": "6bc4708fb9b2ac52d9a18997e923da6a58916102",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "koota-query-predicates",
+      "repository_url": "https://github.com/pmndrs/koota",
+      "base_commit": "9c434858b2b522002f8c5eb4a554fa8836a7cf3c",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "true-myth-iterable-collection-combinators",
+      "repository_url": "https://github.com/true-myth/true-myth",
+      "base_commit": "d8fbebc75de4991a32354518beff1abf628d0b07",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "happy-dom-abort-pending-body-reads",
+      "repository_url": "https://github.com/capricorn86/happy-dom",
+      "base_commit": "82a0888cb2c87a6123e05424b528f8e8c9b3e426",
+      "language": "typescript",
+      "category": "bugfix"
+    },
+    {
+      "task_id": "helm-unified-manifest-stream",
+      "repository_url": "https://github.com/helm/helm",
+      "base_commit": "42f78ba60edf531d5161e00d9819a7c34d976343",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "prometheus-transactional-reload-status",
+      "repository_url": "https://github.com/prometheus/prometheus.git",
+      "base_commit": "24a057bbf9089677b4c49eac4ae1f28287ac8bb9",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "psd-tools-blend-range-api",
+      "repository_url": "https://github.com/psd-tools/psd-tools",
+      "base_commit": "c5e03189188daa3c5589326a9d74506d7dc48bc9",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "anko-default-function-arguments",
+      "repository_url": "https://github.com/mattn/anko",
+      "base_commit": "9d2d84bb1564e9513287998c56ccf16c01c19008",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "ofetch-per-origin-circuit-breaker",
+      "repository_url": "https://github.com/unjs/ofetch",
+      "base_commit": "dfbe3ca4ef8a22fc023fca5a5ef530e525f5e523",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "kysely-window-grouping-helpers",
+      "repository_url": "https://github.com/kysely-org/kysely",
+      "base_commit": "91cf3733b2a419f5b17dff118cedb7052ab5300d",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "kombu-virtual-queue-dead-lettering",
+      "repository_url": "https://github.com/celery/kombu",
+      "base_commit": "3c5c1bd86376ee73d52a4cc770bdaeab15bbc2f3",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "obsidian-linter-scoped-ignore-markers",
+      "repository_url": "https://github.com/platers/obsidian-linter",
+      "base_commit": "6393b3ab32a2ace1fc24d4b0f5e0f13a179c874f",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "effect-sse-httpapi-streaming",
+      "repository_url": "https://github.com/Effect-TS/effect",
+      "base_commit": "9245bc59ebfa688e8c92dd691296ee69d0815e59",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "go-genai-streamed-function-args",
+      "repository_url": "https://github.com/googleapis/go-genai.git",
+      "base_commit": "87c0e5a4f27d04569d927717769f34483e0ba475",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "arcane-drift-detection-baselines",
+      "repository_url": "https://github.com/getarcaneapp/arcane.git",
+      "base_commit": "d34a5e2a6c5eb0f0955039775f5b9538424b58ff",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "abs-module-cache-flags",
+      "repository_url": "https://github.com/abs-lang/abs",
+      "base_commit": "cb1b3b671d0ee9fa9da9f7b02f86967953ffd10a",
+      "language": "go",
+      "category": "enhancement"
+    },
+    {
+      "task_id": "bandit-interprocedural-taint-checks",
+      "repository_url": "https://github.com/PyCQA/bandit.git",
+      "base_commit": "b46fa3a2723635aa29cc012538df4867ac2ac006",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "go-git-worktree-merge-conflicts",
+      "repository_url": "https://github.com/go-git/go-git",
+      "base_commit": "424e9964d3a33c6507a77c126841f2c5897262af",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "pwntools-tube-multiplexing",
+      "repository_url": "https://github.com/Gallopsled/pwntools",
+      "base_commit": "76894a5404a65d2800b6d0adaf3485ecba275caa",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "dateutil-rfc5545-timezone-interop",
+      "repository_url": "https://github.com/dateutil/dateutil",
+      "base_commit": "c981f9c7aa91b83cc9bd33a09ecee9e751b06e8d",
+      "language": "python",
+      "category": "enhancement"
+    },
+    {
+      "task_id": "geo-shapeindex-serialization",
+      "repository_url": "https://github.com/golang/geo",
+      "base_commit": "87f5a40ea07a4ea629ee5623c72660f3d1b217fa",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "awilix-async-container-initialization",
+      "repository_url": "https://github.com/jeffijoe/awilix",
+      "base_commit": "82ac179c1de4c216c4e333093044fac643303f0c",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "dasel-html-document-format",
+      "repository_url": "https://github.com/TomWright/dasel",
+      "base_commit": "0dd6132e0c58edbd9b1a5f7ffd00dfab1e6085ad",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "katex-multicolumn-array-spans",
+      "repository_url": "https://github.com/KaTeX/KaTeX",
+      "base_commit": "89bede495dc2c85e1c57ba627a18526f71d57396",
+      "language": "javascript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "happy-dom-deterministic-intersectionobserver",
+      "repository_url": "https://github.com/capricorn86/happy-dom",
+      "base_commit": "82a0888cb2c87a6123e05424b528f8e8c9b3e426",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "mashumaro-flattened-dataclass-fields",
+      "repository_url": "https://github.com/Fatal1ty/mashumaro",
+      "base_commit": "de139fd51c4d347666d109a8aea9d25451d908f6",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "dynamodb-toolbox-lazy-recursive-schemas",
+      "repository_url": "https://github.com/dynamodb-toolbox/dynamodb-toolbox",
+      "base_commit": "1f2a18664f8aded292707fcafb01ff15ea33d3b8",
+      "language": "typescript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "pebble-durability-wait-apis",
+      "repository_url": "https://github.com/cockroachdb/pebble",
+      "base_commit": "1454d2bc0f378d7f34766afafee68a77e7b85995",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "goreleaser-retry-publish-auditing",
+      "repository_url": "https://github.com/goreleaser/goreleaser",
+      "base_commit": "399ef141161f212f4e81b5d7497b84633fc712d9",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "opa-rego-rule-profiling",
+      "repository_url": "https://github.com/open-policy-agent/opa",
+      "base_commit": "1ac64ef1a57a531c2723c59848890b88e816d777",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "kcp-go-multiplexed-kcp-streams",
+      "repository_url": "https://github.com/xtaci/kcp-go",
+      "base_commit": "56b1fffecd743df1e7490235e69b51c44701f34c",
+      "language": "go",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "testem-bail-on-test-failure",
+      "repository_url": "https://github.com/testem/testem",
+      "base_commit": "06a1adb7a70e85e7322d8cfae3181508785de95d",
+      "language": "javascript",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "narwhals-rolling-window-suite",
+      "repository_url": "https://github.com/narwhals-dev/narwhals",
+      "base_commit": "061c97f8a01bf9e721835978b039303c5051501c",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "httpx-streaming-json-iteration",
+      "repository_url": "https://github.com/encode/httpx",
+      "base_commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "textual-richlog-follow-state",
+      "repository_url": "https://github.com/Textualize/textual",
+      "base_commit": "0f0849fd37fbd0d4d6f81889476c22340129df67",
+      "language": "python",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "fd-deterministic-multi-key-sorting",
+      "repository_url": "https://github.com/sharkdp/fd",
+      "base_commit": "227883606023d62275fb48701aeac90f2b604143",
+      "language": "rust",
+      "category": "feature_request"
+    },
+    {
+      "task_id": "task-task-graph-export",
+      "repository_url": "https://github.com/go-task/task",
+      "base_commit": "54bdcba369357b47e19066b57badfb216a4c8d95",
+      "language": "go",
+      "category": "feature_request"
+    }
+  ]
+}

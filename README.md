@@ -10,9 +10,51 @@ Pier-native Codex is additionally supported on DeepSWE v1.1.
 | [Hermes Agent](https://github.com/NousResearch/hermes-agent) | SWE-bench, DeepSWE | `v2026.8.18` | `e624e9fde561e1add9388384012b295fde669ade` | Python 3.11 |
 | [Codex CLI](https://github.com/openai/codex) | DeepSWE | `0.152.0` | — | Pier-installed Node 22 |
 
-All agents use the direct DeepSeek provider and default to `deepseek-v4-flash`. The API key is
-passed only as an environment variable; it is never written into an image, manifest, or
-generated command record.
+All agents default to the direct DeepSeek provider and `deepseek-v4-flash`. API keys are passed
+only as environment variables; they are never written into an image, manifest, or generated
+command record.
+
+V5/V6 Pi workflows can assign a provider, model and optional endpoint to each internal stage
+with `deepswe run --stage-model-config path/to/stage-models.json`. The file is secret-free; API
+keys are still supplied through environment variables. For example:
+
+```json
+{
+  "solver": {"model": "deepseek-v4-flash"},
+  "A": {"model": "openai/gpt-5.6-sol", "base_url": "https://api.openai.com/v1"},
+  "I": {"model": "openai/gpt-5.6-sol", "base_url": "https://api.openai.com/v1"},
+  "R": {"model": "openai/gpt-5.6-sol", "base_url": "https://api.openai.com/v1"},
+  "S": {"model": "openai/gpt-5.6-sol", "base_url": "https://api.openai.com/v1"},
+  "repair": {"model": "deepseek-v4-flash"},
+  "json_corrector": {"model": "openai/gpt-5.6-sol", "base_url": "https://api.openai.com/v1"}
+}
+```
+
+Supported built-in providers are `deepseek`, `openai`, and `zai`. Set `DEEPSEEK_API_KEY`,
+`OPENAI_API_KEY`, and/or `ZAI_API_KEY` according to the stages used. When omitted, every stage inherits the command's
+`--model` value and the existing DeepSeek behavior is unchanged. The checked-in V6 experiment
+configuration at `configs/v6-deepseek-solver-openai-review.json` uses the OpenAI-compatible
+review endpoint for A/I/R/S and JSON correction while keeping Solver and Repair on DeepSeek.
+For a run that uses both providers, `scripts/run_with_provider_keys.sh` injects both keys only
+for the child process.
+
+The V6.1 all-GLM configuration at `configs/v6.1-glm-5.3.json` routes every internal stage
+through Pi's native `zai/glm-5.3` provider and the standard BigModel API endpoint. Use
+`scripts/run_with_zai_key.sh` to pass the Z.AI credential to the child process without storing
+it in the configuration or job metadata.
+
+The V6.1 DeepSeek V4.1 Flash configuration at
+`configs/v6.1-deepseek-v4.1-flash.json` registers the newer model under Pi's native
+`deepseek` provider using the OpenAI-compatible Chat Completions wire API. The provider's wire
+model ID is `deepseek-flash`; its display metadata identifies the V4.1 Flash model. Its model metadata
+is emitted into the per-role `models.json` because Pi 0.84.2 does not include this model in
+its built-in catalog. Verify the provider's published context and output limits before a
+large run; the checked-in values are the initial V4.1 Flash integration defaults.
+
+```bash
+external-agents-eval deepswe run --agent pi-v5-review-repair \
+  --stage-model-config configs/v5-openai-review.json
+```
 
 ## Repository structure
 
@@ -282,6 +324,87 @@ After the task image is built, V5 records any environment-authored Git diff as t
 materializes that baseline into every isolated role worktree, and stores P0/P1 relative to
 the baseline. `manifest.json` binds the original base commit, baseline digest, and patch
 coordinate system. Historical base-relative P0 manifests are normalized before review.
+
+V6.1 runs A before Solver, appends the frozen O/P/Q ledger to the original coding
+instruction, and uses that ledger again in I/R → S → Repair review. A structurally invalid
+ledger ends the run before Solver; source-anchor problems are recorded as degraded quality.
+The normal run generates P0 and does not accept `--p0-manifest`.
+
+```bash
+external-agents-eval deepswe run \
+  --agent pi-v6-review-repair \
+  --job-name deepswe-v1.1-pi-v6-review-repair-smoke \
+  --task-name <task-id> \
+  --stage-model-config configs/v6-deepseek-solver-openai-review.json \
+  --num-workers 1 \
+  --dry-run
+```
+
+V6 stores its run artifacts under `v6_review_repair/`, including the pre-Solver ledger,
+Solver prompt/trajectory, generated P0, reused V5 review artifacts, and final delivery.
+
+V6.2 is an additive entrypoint, `--agent pi-v62-review-repair`. It runs the original A
+exploration, freezes the exact baseline lines returned by its `read` calls, and uses the
+unchanged FT prompt and single-call inference protocol to generate the ledger for Solver.
+The original A draft is retained only as a diagnostic; Solver/I/R/S/Repair use the FT ledger.
+Artifacts remain under `v6_review_repair/`, with `v6.2/evidence.json`,
+`v6.2/evidence-search/`, and `v6.2/ledger/` added. Both A steps use the existing `A` model
+route. FT retains thinking/high, 65,536 output tokens including reasoning, a 1,800-second
+request timeout, and no automatic inference retries. See
+[the V6.2 workflow notes](docs/V6.2流水线说明.md) for the preserved protocol and validation.
+
+To retry a V6.1 stage in a new one-task job, create a JSON fork plan. `source_run` is the
+old trial's `v6_review_repair/` directory; `reuse` can override an individual predecessor
+with another trial directory. For a manually edited A ledger, set `reuse.A` to the edited
+`ledger.json` file and start at `Solver`. The supported `start_at` values are `A`, `Solver`,
+`I/R` (both reviewers), `I`, `R`, `S`, `Repair`, and `Verifier`. All stages from the selected
+point run through the normal Pier verifier. The plan checks task/base/baseline identity and
+the selected ledger, P0, review and P1 hashes before reuse.
+
+```json
+{
+  "task_id": "<task-id>",
+  "start_at": "I",
+  "source_run": "results/deepswe/<old-job>/<trial>/v6_review_repair",
+  "reuse": {"R": "results/deepswe/<other-job>/<trial>/v6_review_repair"}
+}
+```
+
+```bash
+external-agents-eval deepswe run \
+  --agent pi-v6-review-repair \
+  --manifest <same-manifest-as-source> \
+  --task-name <task-id> \
+  --job-name <new-job-name> \
+  --fork-plan /absolute/path/to/fork.json
+```
+
+Paths in the plan are absolute or relative to the plan file. Existing V6.1 results can be
+used as sources; new runs also write `v6/stages/*.json` for intermediate stage reuse.
+
+To retry several tasks in one concurrent Pier job, create a JSON mapping from each task ID
+to its own fork plan. Paths in this mapping are relative to the mapping file (or absolute).
+Each plan's `task_id` must match its mapping key. The mapping selects the tasks when
+`--task-name` is omitted; if provided, the selected task IDs must match the mapping.
+
+```json
+{
+  "<task-a>": "task-a/fork.json",
+  "<task-b>": "task-b/fork.json"
+}
+```
+
+```bash
+external-agents-eval deepswe run \
+  --agent pi-v6-review-repair \
+  --manifest <same-manifest-as-sources> \
+  --job-name <new-batch-job-name> \
+  --fork-plans /absolute/path/to/plans.json \
+  --num-workers 4
+```
+
+Pier runs the selected tasks concurrently in one job, so the Docker job uses one BuildKit
+builder while each trial reads its own ledger and upstream stage outputs.
 
 After the frozen batch has finished, compute the experiment-specific metrics separately
 from the ordinary benchmark summary:

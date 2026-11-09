@@ -1,0 +1,47 @@
+{
+  "status": "prepared_pending_real_model_smoke",
+  "dataset_revision": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+  "sample_seed": 20261026,
+  "task_count": 100,
+  "manifest_sha256": "77172ea2541beec7557b0095d9ccc7504afaab915c6e811e2275aa0c60d91f96",
+  "framework": "mini-swe-agent",
+  "workflow": "v6.2",
+  "model": "deepseek-flash / DeepSeek V4.1 Flash",
+  "versions": {
+    "mini-swe-agent": "2.4.6",
+    "swebench": "4.1.0",
+    "datacurve-pier": "0.3.1",
+    "litellm": "1.106.4"
+  },
+  "python": "3.12.15 (main, Oct 21 2026, 17:47:06) [Clang 23.1.3 ]",
+  "workers": 2,
+  "container_cpus": 2,
+  "container_memory": "6g",
+  "network": "none",
+  "unit_tests_passed": 14,
+  "official_grader_specs_validated": 100,
+  "official_image_preflight": {
+    "commit_object_count": 1,
+    "history_removed": true,
+    "object_count": 2017,
+    "remotes_removed": true,
+    "synthetic_commit": "a7ce9307710cd1bf1824a615d9a71cf8f8c2e409",
+    "tree_sha": "0401883b49d7d7cbff1013bef18ea82fe359b5f7",
+    "other_git_directories_removed": 0,
+    "network": "none"
+  },
+  "offline_pipeline": {
+    "status": "passed",
+    "model_api_calls": 0,
+    "workflow": "v6.2",
+    "framework": "mini-swe-agent",
+    "route": "accept",
+    "evidence_spans": 1,
+    "run_directory": "/root/v62-swe-verified100-20261026/preflight/offline-pipeline/cfa01737",
+    "note": "Stub outputs verify wiring only; this is not a benchmark solution or model smoke result."
+  },
+  "paid_model_api_calls": 0,
+  "benchmark_generation_started": false,
+  "api_key_present_in_current_environment": false,
+  "free_disk_gib": 136.1
+}

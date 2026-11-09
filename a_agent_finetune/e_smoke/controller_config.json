@@ -1,0 +1,6 @@
+{
+  "model": "qwen35-9b",
+  "max_format_retries": 1,
+  "max_semantic_retries": 0,
+  "no_compaction": true
+}

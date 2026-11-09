@@ -90,7 +90,13 @@ class PiV5SolveReviewRepairPierAgent(PiPierAgent):
             if manifest_base != base_commit:
                 raise RuntimeError("V5 P0 manifest base commit does not match the task")
         root = self.logs_dir.parent / "v5_review_repair"
-        store = ArtifactStore(root, secrets=(self.extra_env.get("DEEPSEEK_API_KEY", ""),))
+        store = ArtifactStore(
+            root,
+            secrets=tuple(
+                self.extra_env.get(key, "")
+                for key in self.stage_model_config.required_env_keys()
+            ),
+        )
         env = self.agent_env(environment)
         env.update({
             "PI_CODING_AGENT_DIR": "/external_eval/pi_config",
@@ -102,6 +108,8 @@ class PiV5SolveReviewRepairPierAgent(PiPierAgent):
         })
         runner = PiRoleRunner(
             environment=environment, logs_root=root, model=self.runtime_model,
+            provider=self.runtime_provider,
+            stage_model_config=self.stage_model_config,
             agent_version=self.version(), env=env, redact=self.redact,
         )
         workspace = ContainerGitWorkspaceManager(
@@ -217,7 +225,7 @@ class PiV5SolveReviewRepairPierAgent(PiPierAgent):
             )
             config = V5Config(
                 role_timeout_sec=self.workflow_timeout_sec or 1_800,
-                model=self.runtime_model,
+                model=self.model_spec_for_role("solver").model,
             )
             controller = V5Controller(
                 role_runner=runner,
@@ -239,13 +247,14 @@ class PiV5SolveReviewRepairPierAgent(PiPierAgent):
                         uuid.NAMESPACE_URL,
                         f"{task_id}:{base_commit}:{sha256_bytes(p0)}:"
                         f"{environment_baseline_sha256}:"
+                        f"{self.stage_model_config.digest}:"
                         f"{config.prompt_version}:{config.controller_version}",
                     ).hex,
                 )
                 final_patch = result.p1_patch
                 metadata = {
-                    "provider": "deepseek",
-                    "model": self.runtime_model,
+                    **self.model_spec_for_role("solver").to_metadata(),
+                    "stage_models": self.stage_model_config.to_metadata(),
                     "workflow": "solve-review-repair-v5",
                     "workflow_state": "completed",
                     "route": result.route,
@@ -267,8 +276,8 @@ class PiV5SolveReviewRepairPierAgent(PiPierAgent):
                 store.event("V5_SAFE_FALLBACK", error=str(error), task_id=task_id)
                 final_patch = p0
                 metadata = {
-                    "provider": "deepseek",
-                    "model": self.runtime_model,
+                    **self.model_spec_for_role("solver").to_metadata(),
+                    "stage_models": self.stage_model_config.to_metadata(),
                     "workflow": "solve-review-repair-v5",
                     "workflow_state": "safe_fallback",
                     "route": "hold",
@@ -303,6 +312,7 @@ class PiV5SolveReviewRepairPierAgent(PiPierAgent):
                         "environment_baseline_sha256"
                     ],
                     "environment_baseline": metadata.get("environment_baseline"),
+                    "stage_models": metadata.get("stage_models"),
                 },
             )
             discarded_final = await workspace.restore_final_worktree(base_commit=base_commit)
@@ -346,7 +356,11 @@ class PiV5SolveReviewRepairPierAgent(PiPierAgent):
             "total_cost_usd": 0.0,
         }
         seen_metric = {key: False for key in totals}
+        # Evidence bundles archive copies of reviewer trajectories. Count the
+        # original invocation once, not its archived copy as a second call.
         for path in sorted(root.glob("**/trajectory.json")):
+            if "bundles" in path.relative_to(root).parts:
+                continue
             payload = json.loads(path.read_text(encoding="utf-8"))
             for step in payload.get("steps", [])[1:]:
                 copied = dict(step)

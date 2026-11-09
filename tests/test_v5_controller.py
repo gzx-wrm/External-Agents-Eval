@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 from pathlib import Path
 
 import pytest
 
-from external_agents_eval.workflows.solve_review_repair.artifacts import ArtifactStore
+from external_agents_eval.workflows.solve_review_repair.artifacts import (
+    ArtifactStore,
+    sha256_bytes,
+    sha256_json,
+)
 from external_agents_eval.workflows.solve_review_repair.models import (
     IndeterminateInvocationError,
     RoleName,
@@ -18,6 +23,7 @@ from external_agents_eval.workflows.solve_review_repair.v5_contracts import (
     V5ContractError,
 )
 from external_agents_eval.workflows.solve_review_repair.v5_controller import V5Controller
+from external_agents_eval.workflows.solve_review_repair.v6_fork import V6StageSource
 
 NOTE_TEMPLATE = """# Review note: {target}
 
@@ -149,6 +155,125 @@ def test_v5_controller_runs_a_ir_s_and_persists_freeze(tmp_path):
     assert "Do not use the network" in spec_call["prompt"]
     assert "bash" not in spec_call["tools"]
     assert "bash" not in summary_call["tools"]
+
+
+def test_v6_fork_reuses_one_reviewer_then_retries_summary(tmp_path):
+    task = TaskInput("task", "Add behavior", "repo", "base", "title")
+    original_root = tmp_path / "original"
+    original_runner = FakeRunner(tmp_path)
+    original = V5Controller(
+        role_runner=original_runner,
+        workspace=FakeWorkspace(),
+        artifacts=ArtifactStore(original_root),
+    )
+    try:
+        original_result = asyncio.run(original.run(
+            task,
+            candidate_patch=b"p0",
+            base_worktree="base",
+            candidate_worktree="candidate",
+            export_v6_stages=True,
+        ))
+    finally:
+        original.close()
+    source = V6StageSource(
+        original_root,
+        task_id="task",
+        base_commit="base",
+        baseline_sha256=sha256_bytes(b""),
+    )
+    ledger_sha = sha256_json(original_result.ledger)
+    p0_sha = sha256_bytes(b"p0")
+    reused_r = source.review("R", ledger_sha256=ledger_sha, p0_sha256=p0_sha)
+    reused_i = source.review("I", ledger_sha256=ledger_sha, p0_sha256=p0_sha)
+    reused_s = source.summary(
+        ledger_sha256=ledger_sha,
+        p0_sha256=p0_sha,
+        review_sha256={
+            role: sha256_json(value["report"])
+            for role, value in (("I", reused_i), ("R", reused_r))
+        },
+    )
+
+    retry_root = tmp_path / "retry-r"
+    (retry_root / "v5").mkdir(parents=True)
+    for name in ("ledger.json", "source-bindings.json"):
+        shutil.copy2(original_root / "v5" / name, retry_root / "v5" / name)
+    retry_runner = FakeRunner(tmp_path)
+    retry = V5Controller(
+        role_runner=retry_runner,
+        workspace=FakeWorkspace(),
+        artifacts=ArtifactStore(retry_root),
+    )
+    try:
+        result = asyncio.run(retry.run(
+            task,
+            candidate_patch=b"p0",
+            base_worktree="base",
+            candidate_worktree="candidate",
+            reused_reviews={"R": reused_r},
+            export_v6_stages=True,
+        ))
+    finally:
+        retry.close()
+    assert result.route == "accept"
+    assert RoleName.V5_IMPLEMENTATION_REVIEWER in retry_runner.calls
+    assert RoleName.V5_REGRESSION_REVIEWER not in retry_runner.calls
+    assert RoleName.V5_SUMMARY_REVIEWER in retry_runner.calls
+    assert (retry_root / "v6/stages/R.json").is_file()
+    assert (retry_root / "v5/bundles").is_dir()
+
+    retry_s_root = tmp_path / "retry-s"
+    (retry_s_root / "v5").mkdir(parents=True)
+    for name in ("ledger.json", "source-bindings.json"):
+        shutil.copy2(original_root / "v5" / name, retry_s_root / "v5" / name)
+    retry_s_runner = FakeRunner(tmp_path)
+    retry_s = V5Controller(
+        role_runner=retry_s_runner,
+        workspace=FakeWorkspace(),
+        artifacts=ArtifactStore(retry_s_root),
+    )
+    try:
+        result = asyncio.run(retry_s.run(
+            task,
+            candidate_patch=b"p0",
+            base_worktree="base",
+            candidate_worktree="candidate",
+            reused_reviews={"I": reused_i, "R": reused_r},
+            reused_summary=reused_s,
+            export_v6_stages=True,
+        ))
+    finally:
+        retry_s.close()
+    assert result.route == "accept"
+    assert retry_s_runner.calls == []
+
+
+def test_v6_fork_rejects_review_for_other_p0(tmp_path):
+    task = TaskInput("task", "Add behavior", "repo", "base", "title")
+    root = tmp_path / "source"
+    controller = V5Controller(
+        role_runner=FakeRunner(tmp_path),
+        workspace=FakeWorkspace(),
+        artifacts=ArtifactStore(root),
+    )
+    try:
+        result = asyncio.run(controller.run(
+            task,
+            candidate_patch=b"p0",
+            base_worktree="base",
+            candidate_worktree="candidate",
+            export_v6_stages=True,
+        ))
+    finally:
+        controller.close()
+    source = V6StageSource(
+        root, task_id="task", base_commit="base", baseline_sha256=sha256_bytes(b""),
+    )
+    with pytest.raises(ValueError, match="selected A/P0"):
+        source.review(
+            "I", ledger_sha256=sha256_json(result.ledger), p0_sha256=sha256_bytes(b"other"),
+        )
 
 
 def test_v5_managed_delivery_is_exactly_bound_and_forwarded(tmp_path):

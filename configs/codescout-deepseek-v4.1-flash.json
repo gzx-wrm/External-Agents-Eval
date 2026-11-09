@@ -1,0 +1,13 @@
+{
+  "relevance_threshold": 4,
+  "max_targets": 15,
+  "max_outline_chars": 240000,
+  "max_source_chars": 240000,
+  "max_file_bytes": 4000000,
+  "max_seconds": 3600,
+  "request_timeout": 600,
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com/v1",
+  "reasoning_effort": "high",
+  "max_tokens": 65536
+}

@@ -1,0 +1,5 @@
+{
+  "defaultProjectTrust": "never",
+  "telemetry": false,
+  "compaction": {"enabled": false}
+}

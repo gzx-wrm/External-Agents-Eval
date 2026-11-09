@@ -73,6 +73,41 @@ def test_deepswe_accepts_v5_review_repair_agent_without_legacy_options(tmp_path)
     assert args.review_prompt_version is None
 
 
+def test_deepswe_accepts_v6_review_repair_agent_without_frozen_p0():
+    args = build_parser().parse_args(
+        [
+            "deepswe",
+            "run",
+            "--agent",
+            "pi-v6-review-repair",
+            "--workflow-role-timeout",
+            "3600",
+        ]
+    )
+
+    assert args.agent == "pi-v6-review-repair"
+    assert args.p0_manifest is None
+    assert args.workflow_role_timeout == 3600
+
+
+def test_deepswe_accepts_v6_fork_plan(tmp_path):
+    args = build_parser().parse_args([
+        "deepswe", "run", "--agent", "pi-v6-review-repair",
+        "--fork-plan", str(tmp_path / "fork.json"),
+        "--task-name", "retry-task",
+    ])
+    assert args.fork_plan == tmp_path / "fork.json"
+
+
+def test_deepswe_accepts_v6_fork_plans(tmp_path):
+    args = build_parser().parse_args([
+        "deepswe", "run", "--agent", "pi-v6-review-repair",
+        "--fork-plans", str(tmp_path / "plans.json"), "--num-workers", "4",
+    ])
+    assert args.fork_plans == tmp_path / "plans.json"
+    assert args.num_workers == 4
+
+
 def test_deepswe_exposes_review_manifest_freeze_command(tmp_path):
     args = build_parser().parse_args(
         [

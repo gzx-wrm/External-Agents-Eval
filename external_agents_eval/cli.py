@@ -165,6 +165,15 @@ def build_parser() -> argparse.ArgumentParser:
     deep_run.add_argument("--jobs-dir", type=Path, default=DEFAULT_DEEPSWE_JOBS)
     deep_run.add_argument("--job-name", default=None)
     deep_run.add_argument("--model", default=DEFAULT_MODEL)
+    deep_run.add_argument(
+        "--stage-model-config",
+        type=Path,
+        default=None,
+        help=(
+            "JSON file assigning provider/model/base_url per Pi stage "
+            "(solver, A, I, R, S, repair)"
+        ),
+    )
     deep_run.add_argument("--num-workers", type=int, default=1)
     deep_run.add_argument("--attempts", type=int, default=1)
     deep_run.add_argument(
@@ -172,6 +181,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Frozen existing-P0 manifest for the pi-review-repair workflow",
+    )
+    deep_run.add_argument(
+        "--fork-plan",
+        type=Path,
+        default=None,
+        help="V6.1 JSON plan selecting a stage to retry and frozen upstream runs to reuse",
+    )
+    deep_run.add_argument(
+        "--fork-plans",
+        type=Path,
+        default=None,
+        help="V6.1 JSON mapping of task IDs to per-task fork plan paths for one Pier job",
     )
     deep_run.add_argument(
         "--workflow-role-timeout",
@@ -376,6 +397,7 @@ def _run_deepswe(command: str, args: argparse.Namespace) -> int:
             jobs_dir=args.jobs_dir,
             job_name=args.job_name,
             model=args.model,
+            stage_model_config=args.stage_model_config,
             num_workers=args.num_workers,
             attempts=args.attempts,
             max_turns=args.max_turns,
@@ -383,6 +405,8 @@ def _run_deepswe(command: str, args: argparse.Namespace) -> int:
             environment=args.environment,
             dry_run=args.dry_run,
             p0_manifest=args.p0_manifest,
+            fork_plan=args.fork_plan,
+            fork_plans=args.fork_plans,
             workflow_timeout_sec=args.workflow_role_timeout,
             few_shot_dir=args.few_shot_dir,
             review_arm=args.review_arm,

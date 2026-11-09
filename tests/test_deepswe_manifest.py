@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import pytest
@@ -8,6 +9,7 @@ from external_agents_eval.benchmarks.deepswe.manifest import (
     load_manifest,
     population_fingerprint,
     select_task_ids,
+    validate_manifest_against_checkout,
     write_manifest,
 )
 
@@ -77,4 +79,64 @@ def test_load_manifest_rejects_task_list_fingerprint_mismatch(tmp_path):
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps(source))
     with pytest.raises(ValueError, match="selection fingerprint"):
+        load_manifest(path)
+
+
+def _excluded_manifest(tmp_path, tasks, excluded):
+    payload = json.loads(DEFAULT_MANIFEST.read_text())
+    candidates = [task for task in tasks if task.name not in excluded]
+    selected = select_task_ids(candidates, sample_size=3, seed=20261014)
+    payload.update(
+        task_count=len(selected),
+        task_ids=list(selected),
+        selection_fingerprint_sha256=hashlib.sha256("\n".join(selected).encode()).hexdigest(),
+        population={"task_count": len(tasks), "fingerprint_sha256": population_fingerprint(tasks)},
+        sampling={
+            "algorithm": "sorted-task-ids/python-random-shuffle-v1",
+            "seed": 20261014,
+            "size": len(selected),
+            "excluded_task_ids": excluded,
+            "candidate_count": len(candidates),
+            "candidate_fingerprint_sha256": hashlib.sha256(
+                "\n".join(task.name for task in candidates).encode()
+            ).hexdigest(),
+        },
+    )
+    path = tmp_path / "excluded-manifest.json"
+    path.write_text(json.dumps(payload))
+    return path
+
+
+def test_excluded_sampling_keeps_full_population_and_reproduces_selection(tmp_path, monkeypatch):
+    tasks = discover_tasks(_make_tasks(tmp_path))
+    excluded = [task.name for task in tasks[:4]]
+    path = _excluded_manifest(tmp_path, tasks, excluded)
+    monkeypatch.setattr(
+        "external_agents_eval.benchmarks.deepswe.manifest.validate_checkout",
+        lambda _: tmp_path,
+    )
+    manifest = load_manifest(path)
+    assert validate_manifest_against_checkout(manifest, tmp_path) == tmp_path
+    assert manifest.population_count == 12
+    assert not set(manifest.task_ids).intersection(excluded)
+
+
+def test_excluded_sampling_rejects_unknown_exclusion(tmp_path, monkeypatch):
+    tasks = discover_tasks(_make_tasks(tmp_path))
+    path = _excluded_manifest(tmp_path, tasks, ["missing-task"])
+    monkeypatch.setattr(
+        "external_agents_eval.benchmarks.deepswe.manifest.validate_checkout",
+        lambda _: tmp_path,
+    )
+    with pytest.raises(ValueError, match="Excluded tasks are absent"):
+        validate_manifest_against_checkout(load_manifest(path), tmp_path)
+
+
+def test_excluded_sampling_rejects_selected_exclusion(tmp_path):
+    tasks = discover_tasks(_make_tasks(tmp_path))
+    path = _excluded_manifest(tmp_path, tasks, [])
+    payload = json.loads(path.read_text())
+    payload["sampling"]["excluded_task_ids"] = [payload["task_ids"][0]]
+    path.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="selects an excluded task"):
         load_manifest(path)

@@ -1,0 +1,14 @@
+# Separate Linux CUDA environment, Python 3.12. Do not install into a live inference venv.
+torch==2.11.0
+transformers==5.5.0
+trl==1.15.0
+peft==0.21.2
+datasets>=4.7.0,<5
+accelerate>=1.4.0,<2
+jsonschema==4.23.0
+jmespath==1.0.1
+liger-kernel>=0.8.2,<0.9
+matplotlib>=3.10,<4
+# Qwen3.5 DeltaNet kernels: build on the GPU host with matching CUDA/PyTorch.
+flash-linear-attention
+causal-conv1d

@@ -15,6 +15,7 @@ from external_agents_eval.benchmarks.deepswe.pier_compat import (
     DEEPSWE_BUILDER_ENV,
     _is_transient_environment_start_error,
     classify_verifier_failure,
+    install_custom_endpoint_egress_patch,
     install_docker_builder_patch,
     install_docker_image_cleanup_patch,
     install_environment_start_retry_patch,
@@ -107,6 +108,74 @@ def test_pier_command_uses_exact_manifest_and_secret_template(tmp_path):
     assert "--sample-seed" not in command
 
 
+def test_v6_pier_command_passes_fork_plan(tmp_path):
+    plan = tmp_path / "fork.json"
+    command = build_pier_command(
+        pier_executable="pier", checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path), agent_id="pi-v6-review-repair",
+        jobs_dir=tmp_path, job_name="fork-test", fork_plan=plan,
+        include_task_ids=("task-a",),
+    )
+    assert f"fork_plan={plan.resolve()}" in command
+
+
+def test_v6_fork_plans_run_as_one_concurrent_pier_job(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    mapping = {}
+    for task_id in ("task-a", "task-b"):
+        source = tmp_path / task_id / "source"
+        source.mkdir(parents=True)
+        plan = tmp_path / task_id / "fork.json"
+        plan.write_text(json.dumps({
+            "task_id": task_id, "start_at": "Solver", "source_run": "source",
+        }), encoding="utf-8")
+        mapping[task_id] = f"{task_id}/fork.json"
+    map_path = tmp_path / "plans.json"
+    map_path.write_text(json.dumps(mapping), encoding="utf-8")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr(runner, "validate_manifest_against_checkout", lambda _manifest, _checkout: checkout)
+    monkeypatch.setattr(runner, "_resolve_pier_executable", lambda command: command)
+    created = []
+    removed = []
+    commands = []
+    monkeypatch.setattr(runner, "_create_dedicated_builder", lambda name: created.append(name))
+    monkeypatch.setattr(runner, "_prewarm_egress_proxy", lambda _name: 1)
+    monkeypatch.setattr(runner, "_remove_dedicated_builder", lambda name: removed.append(name))
+    monkeypatch.setattr(runner, "_run_pier_process", lambda command, _env: commands.append(command))
+
+    runner.run_pier(
+        checkout=checkout, manifest=_manifest(tmp_path), agent_id="pi-v6-review-repair",
+        jobs_dir=tmp_path / "jobs", job_name="batch", fork_plans=map_path,
+        num_workers=2, pier_executable="/bin/true",
+    )
+
+    record = json.loads((tmp_path / "jobs/batch.run.json").read_text())
+    assert len(commands) == len(created) == len(removed) == 1
+    assert created == removed
+    assert record["task_ids"] == ["task-a", "task-b"]
+    assert record["fork_start_at_by_task"] == {"task-a": "Solver", "task-b": "Solver"}
+    assert f"fork_plans={map_path.resolve()}" in commands[0]
+    assert commands[0][commands[0].index("--n-concurrent") + 1] == "2"
+    assert commands[0].count("--include-task-name") == 2
+
+
+def test_v6_fork_plans_reject_incomplete_task_selection(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    for task_id in ("task-a", "task-b"):
+        plan = tmp_path / f"{task_id}.json"
+        plan.write_text(json.dumps({"task_id": task_id, "start_at": "A"}), encoding="utf-8")
+    mapping = tmp_path / "plans.json"
+    mapping.write_text(json.dumps({
+        "task-a": "task-a.json", "task-b": "task-b.json",
+    }), encoding="utf-8")
+    monkeypatch.setattr(runner, "validate_manifest_against_checkout", lambda _manifest, _checkout: checkout)
+    with pytest.raises(ValueError, match="must match the selected tasks"):
+        runner.run_pier(
+            checkout=checkout, manifest=_manifest(tmp_path), agent_id="pi-v6-review-repair",
+            jobs_dir=tmp_path / "jobs", fork_plans=mapping, task_ids=("task-a",), dry_run=True,
+        )
+
+
 def test_pier_command_can_select_one_manifest_task(tmp_path):
     command = build_pier_command(
         pier_executable="pier",
@@ -170,6 +239,7 @@ def test_review_command_freezes_digest_and_forbids_task_level_retries(tmp_path):
             attempts=2,
         )
 
+
 def test_v5_command_accepts_frozen_p0_without_legacy_contract_arguments(tmp_path):
     reviewer_manifest = _reviewer_manifest(tmp_path)
     command = build_pier_command(
@@ -216,6 +286,48 @@ def test_v5_command_accepts_frozen_p0_without_legacy_contract_arguments(tmp_path
         )
 
 
+def test_v6_command_generates_p0_and_rejects_frozen_p0(tmp_path):
+    command = build_pier_command(
+        pier_executable="pier",
+        checkout=Path("/checkout"),
+        manifest=_manifest(tmp_path),
+        agent_id="pi-v6-review-repair",
+        jobs_dir=Path("/jobs"),
+        job_name="review-v6",
+        workflow_timeout_sec=3600,
+    )
+
+    assert (
+        "external_agents_eval.agents.pier.pi_v6_solve_review_repair:"
+        "PiV6SolveReviewRepairPierAgent"
+    ) in command
+    assert "workflow_timeout_sec=3600" in command
+    assert not any(argument.startswith("p0_manifest=") for argument in command)
+    assert "--agent-timeout-multiplier" in command
+
+    with pytest.raises(ValueError, match="valid only for a Pi reviewer workflow"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi-v6-review-repair",
+            jobs_dir=Path("/jobs"),
+            job_name="review-v6-frozen",
+            reviewer_manifest=_reviewer_manifest(tmp_path),
+        )
+
+    with pytest.raises(ValueError, match="forbids automatic task-level retries"):
+        build_pier_command(
+            pier_executable="pier",
+            checkout=Path("/checkout"),
+            manifest=_manifest(tmp_path),
+            agent_id="pi-v6-review-repair",
+            jobs_dir=Path("/jobs"),
+            job_name="review-v6-retry",
+            attempts=2,
+        )
+
+
 def test_v5_dry_run_records_v5_workflow_without_few_shots(
     tmp_path, monkeypatch, capsys
 ):
@@ -246,6 +358,34 @@ def test_v5_dry_run_records_v5_workflow_without_few_shots(
         "few_shot" in argument or "review_contract_version" in argument
         for argument in metadata["command"]
     )
+
+
+def test_v6_dry_run_records_pre_solver_ledger_workflow(tmp_path, monkeypatch, capsys):
+    checkout = tmp_path / "checkout"
+    monkeypatch.setattr(
+        runner,
+        "validate_manifest_against_checkout",
+        lambda _manifest, _checkout: checkout,
+    )
+
+    runner.run_pier(
+        checkout=checkout,
+        manifest=_manifest(tmp_path),
+        agent_id="pi-v6-review-repair",
+        jobs_dir=tmp_path / "jobs",
+        environment="modal",
+        dry_run=True,
+        workflow_timeout_sec=3600,
+    )
+
+    metadata = json.loads(capsys.readouterr().out)
+    assert metadata["workflow"] == "solve-review-repair-v6.1"
+    assert metadata["review_protocol"] == "v5"
+    assert metadata["review_prompt_version"] == "v5-5"
+    assert metadata["review_controller_version"] == "v5-4"
+    assert metadata["ledger_timing"] == "before-solver"
+    assert metadata["p0_manifest"] is None
+    assert "workflow_timeout_sec=3600" in metadata["command"]
 
 def test_review_command_can_select_v2_source_and_repair_audit_arms(tmp_path):
     command = build_pier_command(
@@ -878,6 +1018,49 @@ def test_verifier_failure_classifier_keeps_test_failures_separate():
     assert classify_verifier_failure("connection reset by peer") == "verifier_infrastructure_flake"
 
 
+def test_custom_endpoint_egress_patch_allows_literal_ip_on_port_3000(monkeypatch):
+    from pier.environments import agent_setup
+    from pier.environments.docker import docker as docker_environment
+
+    original = agent_setup.squid_bootstrap_command
+    monkeypatch.setattr(agent_setup, "squid_bootstrap_command", original)
+    install_custom_endpoint_egress_patch()
+
+    script = agent_setup.squid_bootstrap_command()
+    assert "acl Safe_ports port 80 443 3000" in script
+    assert 'acl allowed_ips dst "/tmp/allowed_ips.txt"' in script
+    assert 'acl allowed_ip_urls url_regex -i "/tmp/allowed_ip_urls.txt"' in script
+    assert "http_access allow authenticated allowed_ips" in script
+    assert "http_access allow authenticated allowed_ip_urls" in script
+    assert (
+        docker_environment.write_docker_proxy_compose
+        is agent_setup.write_docker_proxy_compose
+    )
+    assert docker_environment.write_agent_dockerfile is agent_setup.write_agent_dockerfile
+
+
+def test_agent_apt_transport_patch_updates_json_run_command(tmp_path):
+    dockerfile = tmp_path / "Dockerfile"
+    command = [
+        "/bin/bash",
+        "-c",
+        "set -eu\n"
+        "if command -v apt-get >/dev/null 2>&1; then\n"
+        "  apt-get update\n"
+        "  DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates\n"
+        "  rm -rf /var/lib/apt/lists/*\n"
+        "fi",
+    ]
+    dockerfile.write_text("FROM example\nRUN " + json.dumps(command) + "\n")
+
+    pier_compat._patch_agent_apt_transport(dockerfile)
+
+    patched = json.loads(dockerfile.read_text().splitlines()[1].removeprefix("RUN "))[-1]
+    assert "s#http://#https://#g" in patched
+    assert 'Acquire::https::Verify-Peer "false";' in patched
+    assert "rm -f /etc/apt/apt.conf.d/99-external-eval-bootstrap" in patched
+
+
 def test_builder_patch_adds_explicit_compose_builder(monkeypatch):
     class FakeDockerEnvironment:
         _external_eval_builder_patch = False
@@ -996,6 +1179,10 @@ def test_proxy_prewarm_retries_and_uses_pier_generated_context(monkeypatch):
         dockerfile = (context / "Dockerfile").read_text()
         start_script = (context / "start-squid.sh").read_text()
         assert "FROM ubuntu:24.04" in dockerfile
+        assert "s#http://#https://#g" in dockerfile
+        assert dockerfile.index("find /etc/apt") < dockerfile.index("apt-get update")
+        assert 'Acquire::https::Verify-Peer "false";' in dockerfile
+        assert "rm -f /etc/apt/apt.conf.d/99-external-eval-bootstrap" in dockerfile
         assert "apache2-utils ca-certificates squid" in dockerfile
         assert "exec squid -N" in start_script
         return runner.subprocess.CompletedProcess(

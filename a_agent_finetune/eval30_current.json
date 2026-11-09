@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "effective_date": "2026-10-20",
+  "benchmark": "deepswe",
+  "benchmark_revision": "1.1",
+  "task_count": 30,
+  "task_ids": [
+    "sql-formatter-bigquery-pipe-formatting",
+    "expr-try-catch-errors",
+    "scriggo-method-declarations",
+    "meriyah-explicit-resource-declarations",
+    "boa-hierarchical-evaluation-cancellation",
+    "abs-stepped-slices",
+    "langchain-request-coalescing",
+    "fastapi-implicit-head-options",
+    "obsidian-linter-link-format-conversion",
+    "mobly-grouped-test-barriers",
+    "fastapi-deprecation-response-headers",
+    "yaegi-go-embed-directives",
+    "termenv-preserve-ansi-resets",
+    "anko-typed-variable-bindings",
+    "optique-conditional-option-dependencies",
+    "yjs-map-conflict-detection",
+    "ts-pattern-match-each",
+    "testem-per-launcher-reports",
+    "arktype-json-schema-refs-dependencies",
+    "aiomonitor-task-snapshots-diff",
+    "vulture-persistent-analysis-cache",
+    "valibot-recursive-schema-composition",
+    "adaptix-name-mapping-aliases",
+    "obsidian-linter-auto-table-of-contents",
+    "cliffy-config-file-parsing",
+    "gql-incremental-graphql-delivery",
+    "tengo-callable-instance-isolation",
+    "tomlkit-toml-table-converters",
+    "numba-stencil-boundary-modes",
+    "true-myth-iterable-collection-combinators"
+  ],
+  "excluded_task_ids": [
+    "sqlite-utils-safe-import-checkpoints"
+  ],
+  "replacements": [
+    {
+      "removed": "sqlite-utils-safe-import-checkpoints",
+      "added": "true-myth-iterable-collection-combinators",
+      "reason": "User-directed permanent replacement for repeated SQLite tool hangs",
+      "training_overlap": true
+    }
+  ],
+  "source_sampling_run": "a_agent_finetune/runs/ft-ds41-fixed-evidence30-thinking-20261020-w3-r1",
+  "source_e2e_run": "a_agent_finetune/runs/v6.1-ft-thinking-ledger30-e2e-20261020-w3-r1",
+  "fixed_evidence_data_dir": "a_agent_finetune/data/f_teacher_observed_30_current",
+  "replacement_run": "a_agent_finetune/runs/ft-ds41-replacement-true-myth-20261020-r1",
+  "replacement_result_job": "results/deepswe/deepswe-v1.1-pi-v6.1-ft-thinking-true-myth-replacement-20261020-r1",
+  "historical_results_immutable": true,
+  "prior_student_F_replacement_result": "pending; original F SQLite score must be excluded when comparing the revised suite",
+  "replacement_host": "local",
+  "current_ft_result_sources": [
+    {
+      "host": "local",
+      "job_dir": "results/deepswe/deepswe-v1.1-pi-v6.1-ft-thinking-local15-20261020-w3-r1",
+      "exclude_task_ids": [
+        "valibot-recursive-schema-composition"
+      ]
+    },
+    {
+      "host": "remote",
+      "job_dir": "results/deepswe/deepswe-v1.1-pi-v6.1-ft-thinking-remote15-20261020-w3-r1",
+      "exclude_task_ids": [
+        "sqlite-utils-safe-import-checkpoints"
+      ]
+    },
+    {
+      "host": "local",
+      "job_dir": "results/deepswe/deepswe-v1.1-pi-v6.1-ft-thinking-true-myth-replacement-20261020-r1"
+    },
+    {
+      "host": "local",
+      "job_dir": "results/deepswe/deepswe-v1.1-pi-v6.1-ft-thinking-valibot-repair-recovery-20261020-r1",
+      "task_ids": [
+        "valibot-recursive-schema-composition"
+      ],
+      "start_at": "Repair",
+      "reused_stages": [
+        "A",
+        "Solver",
+        "I",
+        "R",
+        "S"
+      ]
+    }
+  ],
+  "suite_schema_version": "a-agent-fixed-evidence-eval30-v2",
+  "source": {
+    "repository": "https://github.com/datacurve-ai/deep-swe.git",
+    "commit": "0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea"
+  },
+  "population": {
+    "task_count": 113,
+    "fingerprint_sha256": "959cbdcc9c12383699b98969f191b8cd6b78c875110caccfb96d0866ea8179cc"
+  },
+  "selection_fingerprint_sha256": "50ede90bf4646b12ffba76fc86bf6dfbb4098ad5db420208a977df3ddf34c28d",
+  "sampling": {
+    "algorithm": "sorted-task-ids/python-random-shuffle-v1",
+    "seed": 20261020,
+    "size": 30,
+    "excluded_task_ids": [
+      "abs-module-cache-flags",
+      "actionlint-action-pinning-lint",
+      "anko-default-function-arguments",
+      "arcane-drift-detection-baselines",
+      "awilix-async-container-initialization",
+      "bandit-incremental-cache-control",
+      "bandit-interprocedural-taint-checks",
+      "bandit-structured-nosec-directives",
+      "cattrs-partial-structuring-recovery",
+      "clack-async-autocomplete-options",
+      "claude-code-by-agents-recursive-delegation",
+      "csstree-shorthand-expansion-compression",
+      "dasel-html-document-format",
+      "dateutil-rfc5545-timezone-interop",
+      "drizzle-orm-window-function-builders",
+      "dynamodb-toolbox-conditional-attribute-requirements",
+      "dynamodb-toolbox-lazy-recursive-schemas",
+      "effect-sse-httpapi-streaming",
+      "eicrud-keyset-pagination-cursor",
+      "etree-xml-diff-patch",
+      "fd-deterministic-multi-key-sorting",
+      "geo-shapeindex-serialization",
+      "go-critic-doc-link-checker",
+      "go-genai-streamed-function-args",
+      "go-git-worktree-merge-conflicts",
+      "goreleaser-retry-publish-auditing",
+      "happy-dom-abort-pending-body-reads",
+      "happy-dom-deterministic-intersectionobserver",
+      "helm-array-merge-strategies",
+      "helm-unified-manifest-stream",
+      "httpx-deterministic-cookie-store",
+      "httpx-multipart-response-parsing",
+      "httpx-streaming-json-iteration",
+      "igel-persist-feature-schema",
+      "ink-grid-box-layout",
+      "ipython-session-bundle-replay",
+      "katex-multicolumn-array-spans",
+      "kcp-go-multiplexed-kcp-streams",
+      "kea-atomic-signal-selectors",
+      "kgateway-consistent-hash-policy",
+      "kombu-single-active-consumer-priority",
+      "kombu-virtual-queue-dead-lettering",
+      "koota-composite-trait-aspects",
+      "koota-deferred-mutation-buffer",
+      "koota-entity-snapshot-rollback",
+      "koota-pair-relation-tracking",
+      "koota-query-predicates",
+      "kysely-window-grouping-helpers",
+      "mashumaro-flattened-dataclass-fields",
+      "mnamer-daemon-watch-lifecycle",
+      "narwhals-rolling-window-suite",
+      "obsidian-linter-scoped-ignore-markers",
+      "ofetch-per-origin-circuit-breaker",
+      "onedump-dump-encryption-pipeline",
+      "opa-rego-rule-profiling",
+      "opa-template-string-reconstruction",
+      "oxvg-structural-selector-preservation",
+      "participle-grammar-conflict-analysis",
+      "pebble-durability-wait-apis",
+      "pest-character-class-coalescing",
+      "prometheus-transactional-reload-status",
+      "prometheus-typed-label-sorting",
+      "psd-tools-blend-range-api",
+      "pwntools-tube-multiplexing",
+      "python-statemachine-state-data-scoping",
+      "query-persist-restored-query-state",
+      "quill-shared-toolbar-focus",
+      "returns-validated-error-accumulation",
+      "scc-bounded-memory-spilling",
+      "skrub-duration-encoding",
+      "sqlfmt-create-table-ddl-formatting",
+      "sqlite-utils-safe-import-checkpoints",
+      "superjson-error-stack-serialization",
+      "task-task-graph-export",
+      "tengo-destructuring-bindings",
+      "testem-bail-on-test-failure",
+      "textual-kitty-key-phases",
+      "textual-richlog-follow-state",
+      "updo-policy-alerting",
+      "vitest-duration-sharding",
+      "wasmi-trap-coredumps",
+      "wazero-multi-module-snapshots",
+      "ytt-jsonpath-query-api"
+    ],
+    "candidate_count": 30,
+    "candidate_fingerprint_sha256": "57ee504034824f8581a01138c9a8a21fa86dc1e17a5d7839692772df257361ad",
+    "selection_note": "Candidate membership is the original29 plus the user-directed permanent True Myth replacement. The shuffle only orders these 30; this is not a fresh random sample."
+  },
+  "recovery_runs": [
+    {
+      "task_id": "valibot-recursive-schema-composition",
+      "host": "local",
+      "run_dir": "a_agent_finetune/runs/ft-ds41-valibot-repair-recovery-20261020-r1",
+      "job_dir": "results/deepswe/deepswe-v1.1-pi-v6.1-ft-thinking-valibot-repair-recovery-20261020-r1",
+      "source_run": "results/deepswe/deepswe-v1.1-pi-v6.1-ft-thinking-local15-20261020-w3-r1/valibot-recursive-schema-composi__WX538nv/v6_review_repair",
+      "start_at": "Repair",
+      "reason": "Original Repair invocation ended without a completion record"
+    }
+  ]
+}

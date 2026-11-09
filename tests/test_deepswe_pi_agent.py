@@ -25,11 +25,34 @@ from external_agents_eval.agents.pier.pi_v5_solve_review_repair import (
     PiV5SolveReviewRepairPierAgent,
     managed_delivery_from_instruction,
 )
+from external_agents_eval.agents.pier.pi_v6_solve_review_repair import (
+    PiV6SolveReviewRepairPierAgent,
+)
 from external_agents_eval.workflows.solve_review_repair.config import WorkflowConfig
 from external_agents_eval.workflows.solve_review_repair.models import (
     IndeterminateInvocationError,
     RoleName,
 )
+
+
+def test_v5_trajectory_totals_ignore_archived_review_copies(tmp_path):
+    original = tmp_path / "v5/reviewer/I/trajectory.json"
+    archived = tmp_path / "v5/bundles/bundle/traces/trajectory.json"
+    for path in (original, archived):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({
+            "steps": [{"source": "user"}, {"source": "agent"}],
+            "final_metrics": {"total_prompt_tokens": 10},
+        }), encoding="utf-8")
+    agent = SimpleNamespace(
+        name=lambda: "pi-v5-review-repair",
+        version=lambda: "test",
+        runtime_model="test-model",
+    )
+    trajectory = PiV5SolveReviewRepairPierAgent._aggregate_trajectories(
+        agent, "task", tmp_path,
+    )
+    assert trajectory["final_metrics"]["total_prompt_tokens"] == 10
 
 
 def test_pi_pier_enables_every_builtin_tool():
@@ -169,6 +192,18 @@ def test_v5_review_agent_entrypoint_has_independent_configuration(monkeypatch):
     assert agent.name() == "pi-v5-review-repair"
     assert agent.workflow_timeout_sec == 3600
     assert agent.p0_manifest is None
+
+
+def test_v6_review_agent_entrypoint_is_additive_and_has_no_frozen_p0(monkeypatch):
+    monkeypatch.setattr(PiPierAgent, "__init__", lambda self, *args, **kwargs: None)
+    agent = PiV6SolveReviewRepairPierAgent(workflow_timeout_sec=3600)
+
+    assert agent.name() == "pi-v6-review-repair"
+    assert agent.workflow_timeout_sec == 3600
+    assert agent.p0_manifest is None
+
+    with pytest.raises(ValueError, match="does not accept p0_manifest"):
+        PiV6SolveReviewRepairPierAgent(p0_manifest="frozen.json")
 
 
 def test_v5_adapter_resolves_abbreviated_manifest_commit_to_full_sha():

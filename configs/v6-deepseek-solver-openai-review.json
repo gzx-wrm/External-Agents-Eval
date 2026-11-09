@@ -1,0 +1,28 @@
+{
+  "solver": {
+    "model": "deepseek-v4-flash"
+  },
+  "A": {
+    "model": "openai/gpt-5.6-sol",
+    "base_url": "http://43.134.83.232:3000/v1"
+  },
+  "I": {
+    "model": "openai/gpt-5.6-sol",
+    "base_url": "http://43.134.83.232:3000/v1"
+  },
+  "R": {
+    "model": "openai/gpt-5.6-sol",
+    "base_url": "http://43.134.83.232:3000/v1"
+  },
+  "S": {
+    "model": "openai/gpt-5.6-sol",
+    "base_url": "http://43.134.83.232:3000/v1"
+  },
+  "repair": {
+    "model": "deepseek-v4-flash"
+  },
+  "json_corrector": {
+    "model": "openai/gpt-5.6-sol",
+    "base_url": "http://43.134.83.232:3000/v1"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "default": {
+    "provider": "openai",
+    "model": "qwen35-9b",
+    "base_url": "http://host.docker.internal:3000/v1",
+    "model_metadata": {
+      "name": "Qwen3.5-9B native E0",
+      "api": "openai-completions",
+      "reasoning": true,
+      "input": ["text"],
+      "contextWindow": 172032,
+      "maxTokens": 32768,
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsStore": false,
+        "maxTokensField": "max_tokens"
+      }
+    }
+  },
+  "A": {
+    "provider": "openai",
+    "model": "qwen35-9b",
+    "base_url": "http://host.docker.internal:3000/v1"
+  },
+  "json_corrector": {
+    "provider": "openai",
+    "model": "qwen35-9b",
+    "base_url": "http://host.docker.internal:3000/v1"
+  }
+}

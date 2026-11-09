@@ -1,0 +1,26 @@
+{
+  "source_batch": "deepswe-v1.1-pi-v6.1-deepseek-flash-random30-from-random60-seed20260922-w4",
+  "selection_rule": "Five distinct repositories among the 17 tasks solved in the original V6.1 DeepSeek V4.1 Flash batch; this is a subset of the later 27 solved tasks. Avoid post-hoc human-edited ledgers in this first pilot.",
+  "tasks": [
+    {
+      "task_id": "abs-stepped-slices",
+      "reason": "Go interpreter: syntax, indexing boundaries, and existing array/string behavior."
+    },
+    {
+      "task_id": "aiomonitor-task-snapshots-diff",
+      "reason": "Python async service: state snapshots and multiple CLI/web access paths."
+    },
+    {
+      "task_id": "yjs-map-conflict-detection",
+      "reason": "JavaScript CRDT: deterministic conflict semantics and preservation of existing map behavior."
+    },
+    {
+      "task_id": "ts-pattern-match-each",
+      "reason": "TypeScript library: public API, runtime matching, and static types."
+    },
+    {
+      "task_id": "fastapi-implicit-head-options",
+      "reason": "Python web framework: HTTP method semantics, route inheritance, and compatibility."
+    }
+  ]
+}

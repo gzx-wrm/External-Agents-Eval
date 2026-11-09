@@ -140,7 +140,10 @@ class PiSolveReviewRepairPierAgent(PiPierAgent):
         artifact_root = self.logs_dir.parent / "review_repair"
         store = ArtifactStore(
             artifact_root,
-            secrets=(self.extra_env.get("DEEPSEEK_API_KEY", ""),),
+            secrets=tuple(
+                self.extra_env.get(key, "")
+                for key in self.stage_model_config.required_env_keys()
+            ),
         )
         role_env = self.agent_env(environment)
         role_env.update(
@@ -160,6 +163,8 @@ class PiSolveReviewRepairPierAgent(PiPierAgent):
             environment=environment,
             logs_root=artifact_root,
             model=self.runtime_model,
+            provider=self.runtime_provider,
+            stage_model_config=self.stage_model_config,
             agent_version=self.version(),
             env=role_env,
             redact=self.redact,
@@ -192,7 +197,7 @@ class PiSolveReviewRepairPierAgent(PiPierAgent):
                     if contract_version == "2.0"
                     else "3.0.1"
                 ),
-                model=self.runtime_model,
+                model=self.model_spec_for_role("solver").model,
                 agent_version=self.version(),
                 resume=True,
             ),
@@ -211,8 +216,8 @@ class PiSolveReviewRepairPierAgent(PiPierAgent):
         trajectory = self._aggregate_trajectories(instruction, artifact_root)
         self.save_trajectory(trajectory, context)
         context.metadata = {
-            "provider": "deepseek",
-            "model": self.runtime_model,
+            **self.model_spec_for_role("solver").to_metadata(),
+            "stage_models": self.stage_model_config.to_metadata(),
             "workflow": f"solve-review-repair-once-v{contract_version.split('.')[0]}",
             "experiment_arm": self.review_arm,
             "contract_version": contract_version,

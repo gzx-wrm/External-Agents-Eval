@@ -14,6 +14,10 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from external_agents_eval.agents.config import AGENTS, DEFAULT_MODEL
+from external_agents_eval.agents.pier.pi_model_config import (
+    PiStageModelConfig,
+    stage_config_json,
+)
 from external_agents_eval.benchmarks.deepswe.config import (
     CODEX_CONFIG_FILE,
     CODEX_MODEL_PROVIDER,
@@ -29,6 +33,7 @@ from external_agents_eval.benchmarks.deepswe.manifest import (
 from external_agents_eval.benchmarks.deepswe.pier_compat import (
     DEEPSWE_BUILDER_ENV,
     _is_transient_environment_start_error,
+    _patch_proxy_apt_transport,
 )
 from external_agents_eval.benchmarks.deepswe.reviewer_experiment_manifest import (
     ReviewerExperimentManifest,
@@ -43,6 +48,11 @@ from external_agents_eval.workflows.solve_review_repair.v5_config import (
     V5_CONTROLLER_VERSION,
     V5_PROMPT_VERSION,
 )
+from external_agents_eval.workflows.solve_review_repair.v6_config import (
+    V6_CONTROLLER_VERSION,
+    V6_PROMPT_VERSION,
+)
+from external_agents_eval.workflows.solve_review_repair.v6_fork import V6ForkPlan, V6ForkPlans
 
 AGENT_IMPORT_PATHS = {
     "pi": "external_agents_eval.agents.pier.pi:PiPierAgent",
@@ -51,6 +61,12 @@ AGENT_IMPORT_PATHS = {
     ),
     "pi-v5-review-repair": (
         "external_agents_eval.agents.pier.pi_v5_solve_review_repair:PiV5SolveReviewRepairPierAgent"
+    ),
+    "pi-v62-review-repair": (
+        "external_agents_eval.agents.pier.pi_v62_solve_review_repair:PiV62SolveReviewRepairPierAgent"
+    ),
+    "pi-v6-review-repair": (
+        "external_agents_eval.agents.pier.pi_v6_solve_review_repair:PiV6SolveReviewRepairPierAgent"
     ),
     "hermes": "external_agents_eval.agents.pier.hermes:HermesPierAgent",
 }
@@ -115,11 +131,14 @@ def build_pier_command(
     jobs_dir: Path,
     job_name: str,
     model: str = DEFAULT_MODEL,
+    stage_model_config: dict | str | None = None,
     num_workers: int = 1,
     attempts: int = 1,
     max_turns: int | None = None,
     environment: str = "docker",
     reviewer_manifest: ReviewerExperimentManifest | None = None,
+    fork_plan: Path | None = None,
+    fork_plans: Path | None = None,
     workflow_timeout_sec: int | None = None,
     few_shot_dir: Path | None = None,
     few_shot_digest: str | None = None,
@@ -136,6 +155,17 @@ def build_pier_command(
         raise ValueError("max_turns must be positive when provided")
     if workflow_timeout_sec is not None and workflow_timeout_sec <= 0:
         raise ValueError("workflow_timeout_sec must be positive when provided")
+    resolved_stage_models = PiStageModelConfig.from_value(
+        stage_model_config,
+        fallback_model=model,
+    )
+    if stage_model_config is not None and agent_id not in {
+        "pi",
+        "pi-v5-review-repair",
+        "pi-v6-review-repair",
+        "pi-v62-review-repair",
+    }:
+        raise ValueError("stage_model_config is valid only for Pi agents")
     if agent_id == "pi-review-repair":
         contract_version = resolve_review_contract_version(
             review_arm, review_contract_version
@@ -162,7 +192,18 @@ def build_pier_command(
         "pi-v5-review-repair",
     }:
         raise ValueError("A reviewer manifest is valid only for a Pi reviewer workflow")
-    if agent_id in {"pi-review-repair", "pi-v5-review-repair"} and attempts != 1:
+    if fork_plan is not None and fork_plans is not None:
+        raise ValueError("Use either fork_plan or fork_plans")
+    if (fork_plan is not None or fork_plans is not None) and agent_id not in {
+        "pi-v6-review-repair", "pi-v62-review-repair",
+    }:
+        raise ValueError("Fork plans require pi-v6-review-repair or pi-v62-review-repair")
+    if agent_id in {
+        "pi-review-repair",
+        "pi-v5-review-repair",
+        "pi-v6-review-repair",
+        "pi-v62-review-repair",
+    } and attempts != 1:
         raise ValueError("The review workflow forbids automatic task-level retries")
     if (few_shot_dir is None) != (few_shot_digest is None):
         raise ValueError("few_shot_dir and few_shot_digest must be provided together")
@@ -182,8 +223,6 @@ def build_pier_command(
         [
             "--model",
             model,
-            "--agent-env",
-            "DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}",
             "--jobs-dir",
             str(jobs_dir),
             "--job-name",
@@ -197,6 +236,20 @@ def build_pier_command(
             "--yes",
         ]
     )
+    for env_key in resolved_stage_models.required_env_keys():
+        command.extend(["--agent-env", f"{env_key}=${{{env_key}}}"])
+    if stage_model_config is not None and agent_id in {
+        "pi",
+        "pi-v5-review-repair",
+        "pi-v6-review-repair",
+        "pi-v62-review-repair",
+    }:
+        command.extend(
+            [
+                "--agent-kwarg",
+                f"stage_model_config={stage_config_json(resolved_stage_models)}",
+            ]
+        )
     if agent_id == "codex":
         command.extend(
             [
@@ -210,6 +263,10 @@ def build_pier_command(
         command.extend(["--agent-kwarg", f"max_turns={max_turns}"])
     if reviewer_manifest is not None:
         command.extend(["--agent-kwarg", f"p0_manifest={reviewer_manifest.path.resolve()}"])
+    if fork_plan is not None:
+        command.extend(["--agent-kwarg", f"fork_plan={Path(fork_plan).expanduser().resolve()}"])
+    if fork_plans is not None:
+        command.extend(["--agent-kwarg", f"fork_plans={Path(fork_plans).expanduser().resolve()}"])
     if few_shot_dir is not None:
         command.extend(
             [
@@ -219,7 +276,12 @@ def build_pier_command(
                 f"few_shot_digest={few_shot_digest}",
             ]
         )
-    if agent_id in {"pi-review-repair", "pi-v5-review-repair"} and workflow_timeout_sec is not None:
+    if agent_id in {
+        "pi-review-repair",
+        "pi-v5-review-repair",
+        "pi-v6-review-repair",
+        "pi-v62-review-repair",
+    } and workflow_timeout_sec is not None:
         command.extend(["--agent-kwarg", f"workflow_timeout_sec={workflow_timeout_sec}"])
     if agent_id == "pi-review-repair":
         assert contract_version is not None
@@ -233,7 +295,7 @@ def build_pier_command(
                 f"{REVIEW_AGENT_TIMEOUT_MULTIPLIER:g}",
             ]
         )
-    if agent_id == "pi-v5-review-repair":
+    if agent_id in {"pi-v5-review-repair", "pi-v6-review-repair", "pi-v62-review-repair"}:
         command.extend(["--agent-timeout-multiplier", f"{REVIEW_AGENT_TIMEOUT_MULTIPLIER:g}"])
     available_task_ids = (
         reviewer_manifest.task_ids if reviewer_manifest is not None else manifest.task_ids
@@ -393,6 +455,7 @@ def _prewarm_egress_proxy(builder_name: str, *, max_attempts: int = 3) -> int:
             allowlist=NetworkAllowlist(domains=["prewarm.invalid"]),
             token=new_proxy_token(),
         )
+        _patch_proxy_apt_transport(proxy_dir / "Dockerfile")
         command = [
             "docker",
             "buildx",
@@ -479,6 +542,7 @@ def run_pier(
     jobs_dir: Path,
     job_name: str | None = None,
     model: str = DEFAULT_MODEL,
+    stage_model_config: Path | None = None,
     num_workers: int = 1,
     attempts: int = 1,
     max_turns: int | None = None,
@@ -486,6 +550,8 @@ def run_pier(
     environment: str = "docker",
     dry_run: bool = False,
     p0_manifest: Path | None = None,
+    fork_plan: Path | None = None,
+    fork_plans: Path | None = None,
     workflow_timeout_sec: int | None = None,
     few_shot_dir: Path | None = None,
     review_arm: str = "E0",
@@ -497,14 +563,47 @@ def run_pier(
 ) -> Path:
     if agent_id not in DEEPSWE_AGENTS:
         raise ValueError(f"Unsupported agent: {agent_id}")
-    if agent_id in {"pi-review-repair", "pi-v5-review-repair"} and attempts != 1:
+    if agent_id in {
+        "pi-review-repair",
+        "pi-v5-review-repair",
+        "pi-v6-review-repair",
+        "pi-v62-review-repair",
+    } and attempts != 1:
         raise ValueError("The review workflow forbids automatic task-level retries")
     if trial_cpus is not None and trial_cpus <= 0:
         raise ValueError("trial_cpus must be positive when provided")
     if trial_memory_mb is not None and trial_memory_mb <= 0:
         raise ValueError("trial_memory_mb must be positive when provided")
-    if not os.environ.get("DEEPSEEK_API_KEY") and not dry_run:
-        raise RuntimeError("DEEPSEEK_API_KEY is not set. Use scripts/run_with_deepseek_key.sh.")
+    stage_model_payload = None
+    if stage_model_config is not None:
+        stage_model_path = stage_model_config.expanduser().resolve()
+        try:
+            stage_model_payload = json.loads(stage_model_path.read_text(encoding="utf-8"))
+        except FileNotFoundError as error:
+            raise ValueError(f"Stage model config does not exist: {stage_model_path}") from error
+        except json.JSONDecodeError as error:
+            raise ValueError(f"Stage model config is not valid JSON: {stage_model_path}") from error
+    resolved_stage_models = PiStageModelConfig.from_value(
+        stage_model_payload,
+        fallback_model=model,
+    )
+    if stage_model_config is not None and agent_id not in {
+        "pi",
+        "pi-v5-review-repair",
+        "pi-v6-review-repair",
+        "pi-v62-review-repair",
+    }:
+        raise ValueError("--stage-model-config requires a Pi agent")
+    if not dry_run:
+        missing_keys = [
+            key for key in resolved_stage_models.required_env_keys()
+            if not os.environ.get(key)
+        ]
+        if missing_keys:
+            raise RuntimeError(
+                "Required provider API key(s) are not set: "
+                + ", ".join(missing_keys)
+            )
     resolved_checkout = validate_manifest_against_checkout(manifest, checkout)
     reviewer_manifest = (
         load_reviewer_experiment_manifest(p0_manifest) if p0_manifest is not None else None
@@ -522,13 +621,39 @@ def run_pier(
     available_task_ids = (
         reviewer_manifest.task_ids if reviewer_manifest is not None else manifest.task_ids
     )
-    selected_task_ids = task_ids if task_ids is not None else available_task_ids
+    if fork_plan is not None and fork_plans is not None:
+        raise ValueError("Use either --fork-plan or --fork-plans")
+    resolved_fork_plans = V6ForkPlans.load(fork_plans) if fork_plans is not None else None
+    if task_ids is not None:
+        selected_task_ids = task_ids
+    elif resolved_fork_plans is not None:
+        selected_task_ids = tuple(resolved_fork_plans.plans)
+    else:
+        selected_task_ids = available_task_ids
     if len(selected_task_ids) != len(set(selected_task_ids)):
         raise ValueError("Selected DeepSWE task IDs must be unique")
     unknown = sorted(set(selected_task_ids) - set(available_task_ids))
     if not selected_task_ids or unknown:
         detail = ": " + ", ".join(unknown) if unknown else ""
         raise ValueError("Selected DeepSWE tasks are empty or outside the active manifest" + detail)
+    resolved_fork_plan = V6ForkPlan.load(fork_plan) if fork_plan is not None else None
+    if resolved_fork_plan is not None:
+        if agent_id not in {"pi-v6-review-repair", "pi-v62-review-repair"}:
+            raise ValueError("--fork-plan requires --agent pi-v6-review-repair or pi-v62-review-repair")
+        if selected_task_ids != (resolved_fork_plan.task_id,):
+            raise ValueError("--fork-plan requires exactly its task_id via --task-name")
+        for source in resolved_fork_plan.sources.values():
+            if not source.exists():
+                raise ValueError(f"V6 fork source does not exist: {source}")
+    if resolved_fork_plans is not None:
+        if agent_id not in {"pi-v6-review-repair", "pi-v62-review-repair"}:
+            raise ValueError("--fork-plans requires --agent pi-v6-review-repair or pi-v62-review-repair")
+        if set(selected_task_ids) != set(resolved_fork_plans.plans):
+            raise ValueError("--fork-plans task IDs must match the selected tasks")
+        for plan in resolved_fork_plans.plans.values():
+            for source in plan.sources.values():
+                if not source.exists():
+                    raise ValueError(f"V6 fork source does not exist: {source}")
     if reviewer_manifest is not None:
         _validate_reviewer_task_bases(
             checkout=resolved_checkout,
@@ -619,11 +744,14 @@ def run_pier(
         jobs_dir=resolved_jobs_dir,
         job_name=resolved_name,
         model=model,
+        stage_model_config=stage_model_payload,
         num_workers=num_workers,
         attempts=attempts,
         max_turns=max_turns,
         environment=environment,
         reviewer_manifest=reviewer_manifest,
+        fork_plan=(resolved_fork_plan.path if resolved_fork_plan is not None else None),
+        fork_plans=(resolved_fork_plans.path if resolved_fork_plans is not None else None),
         workflow_timeout_sec=workflow_timeout_sec,
         few_shot_dir=few_shot_dir,
         few_shot_digest=(frozen_few_shots.digest if frozen_few_shots is not None else None),
@@ -641,6 +769,16 @@ def run_pier(
         "benchmark_revision": "1.1",
         "agent": agent_id,
         "model": model,
+        "stage_models": resolved_stage_models.to_metadata(),
+        "stage_model_config": str(stage_model_config.expanduser().resolve()) if stage_model_config else None,
+        "fork_plan": str(resolved_fork_plan.path) if resolved_fork_plan else None,
+        "fork_plan_sha256": resolved_fork_plan.digest if resolved_fork_plan else None,
+        "fork_plans": str(resolved_fork_plans.path) if resolved_fork_plans else None,
+        "fork_plans_sha256": resolved_fork_plans.digest if resolved_fork_plans else None,
+        "fork_plan_sha256_by_task": (
+            {task_id: plan.digest for task_id, plan in resolved_fork_plans.plans.items()}
+            if resolved_fork_plans else None
+        ),
         "environment": environment,
         "max_turns": max_turns if agent_id == "hermes" else None,
         "turn_limit_policy": (
@@ -677,7 +815,17 @@ def run_pier(
             }
         )
     else:
-        upstream_agent = "pi" if agent_id in {"pi-review-repair", "pi-v5-review-repair"} else agent_id
+        upstream_agent = (
+            "pi"
+            if agent_id
+            in {
+                "pi-review-repair",
+                "pi-v5-review-repair",
+                "pi-v6-review-repair",
+                "pi-v62-review-repair",
+            }
+            else agent_id
+        )
         metadata["agent_upstream_commit"] = AGENTS[upstream_agent].upstream_commit
         if agent_id == "pi-review-repair":
             metadata.update(
@@ -729,6 +877,25 @@ def run_pier(
                     "prompt_version": V5_PROMPT_VERSION,
                     "controller_version": V5_CONTROLLER_VERSION,
                     "p0_manifest": str(reviewer_manifest.path) if reviewer_manifest is not None else None,
+                }
+            )
+        elif agent_id in {"pi-v6-review-repair", "pi-v62-review-repair"}:
+            workflow_version = "6.2" if agent_id == "pi-v62-review-repair" else "6.1"
+            metadata.update(
+                {
+                    "workflow": f"solve-review-repair-v{workflow_version}",
+                    "prompt_version": "v6.2" if workflow_version == "6.2" else V6_PROMPT_VERSION,
+                    "controller_version": "v6.2" if workflow_version == "6.2" else V6_CONTROLLER_VERSION,
+                    "review_protocol": "v5",
+                    "review_prompt_version": V5_PROMPT_VERSION,
+                    "review_controller_version": V5_CONTROLLER_VERSION,
+                    "ledger_timing": "before-solver",
+                    "p0_manifest": None,
+                    "fork_start_at": resolved_fork_plan.start_at if resolved_fork_plan else None,
+                    "fork_start_at_by_task": (
+                        {task_id: plan.start_at for task_id, plan in resolved_fork_plans.plans.items()}
+                        if resolved_fork_plans else None
+                    ),
                 }
             )
     if dry_run:

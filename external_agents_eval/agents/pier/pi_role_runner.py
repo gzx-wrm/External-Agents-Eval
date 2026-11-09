@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import posixpath
 import re
 import shlex
 from datetime import datetime, timezone
@@ -12,6 +13,7 @@ from pier.environments.base import BaseEnvironment
 from pier.utils.trajectory_utils import format_trajectory_json
 
 from external_agents_eval.agents.pier.pi import _build_pi_command
+from external_agents_eval.agents.pier.pi_model_config import PiStageModelConfig
 from external_agents_eval.agents.pier.trajectory import (
     extract_pi_final_assistant_text,
     pi_jsonl_to_atif,
@@ -25,6 +27,11 @@ from external_agents_eval.workflows.solve_review_repair.models import (
     RoleName,
     RoleRunResult,
     WorkflowWorktrees,
+)
+from external_agents_eval.workflows.solve_review_repair.v5_config import (
+    REVIEW_MATERIAL_MAX_FILE_BYTES,
+    REVIEW_MATERIAL_MAX_FILES,
+    REVIEW_MATERIAL_MAX_TOTAL_BYTES,
 )
 
 
@@ -67,6 +74,8 @@ class PiRoleRunner:
         environment: BaseEnvironment,
         logs_root: Path,
         model: str,
+        provider: str = "deepseek",
+        stage_model_config: PiStageModelConfig | None = None,
         agent_version: str,
         env: dict[str, str],
         redact,
@@ -74,7 +83,11 @@ class PiRoleRunner:
     ) -> None:
         self.environment = environment
         self.logs_root = logs_root
-        self.model = model
+        self.stage_model_config = stage_model_config or PiStageModelConfig.from_value(
+            {"default": {"provider": provider, "model": model}}
+        )
+        self.model = self.stage_model_config.default.model
+        self.provider = self.stage_model_config.default.provider
         self.agent_version = agent_version
         self.env = env
         self.redact = redact
@@ -234,9 +247,9 @@ class PiRoleRunner:
         *,
         output_root: str,
         host_root: Path,
-        max_files: int = 128,
-        max_file_bytes: int = 16 * 1024 * 1024,
-        max_total_bytes: int = 32 * 1024 * 1024,
+        max_files: int = REVIEW_MATERIAL_MAX_FILES,
+        max_file_bytes: int = REVIEW_MATERIAL_MAX_FILE_BYTES,
+        max_total_bytes: int = REVIEW_MATERIAL_MAX_TOTAL_BYTES,
     ) -> tuple[dict[str, bytes], list[dict[str, Any]]]:
         """Archive bounded reviewer-authored probe and log files."""
         if not output_root.startswith(self.REVIEW_OUTPUT_ROOT + "/"):
@@ -421,6 +434,7 @@ class PiRoleRunner:
         no_compaction: bool = False,
         invocation_id: str | None = None,
     ) -> RoleRunResult:
+        model_spec = self.stage_model_config.for_role(role)
         started = datetime.now(timezone.utc)
         host_dir = self.logs_root / artifact_prefix
         host_dir.mkdir(parents=True, exist_ok=True)
@@ -482,6 +496,26 @@ class PiRoleRunner:
                     raise IndeterminateInvocationError(
                         f"Invocation {invocation_id} is bound to different execution inputs"
                     )
+                recorded_model_digest = request_record.get("model_config_sha256")
+                if (
+                    recorded_model_digest is not None
+                    and recorded_model_digest != self.stage_model_config.digest
+                ):
+                    raise IndeterminateInvocationError(
+                        f"Invocation {invocation_id} is bound to a different model configuration"
+                    )
+                recorded_model = request_record.get("model")
+                recorded_provider = request_record.get("provider")
+                if (
+                    recorded_model is not None
+                    and (
+                        recorded_model != model_spec.model
+                        or recorded_provider != model_spec.provider
+                    )
+                ):
+                    raise IndeterminateInvocationError(
+                        f"Invocation {invocation_id} is bound to a different provider/model"
+                    )
                 invocation_replayed = True
                 invocation_state = "COMPLETED"
         else:
@@ -501,6 +535,10 @@ class PiRoleRunner:
                             "role": role.value,
                             "prompt_sha256": sha256_bytes(prompt.encode("utf-8")),
                             "worktree": worktree,
+                            "model_config_sha256": self.stage_model_config.digest,
+                            "provider": model_spec.provider,
+                            "model": model_spec.model,
+                            "base_url": model_spec.base_url,
                             "started_at": started.isoformat(),
                         },
                         indent=2,
@@ -544,7 +582,8 @@ class PiRoleRunner:
                     self._session_paths[session_key] = session_file
         pre_session_sha256 = await self._remote_sha256(session_file)
         command = _build_pi_command(
-            model=self.model,
+            model=model_spec.model,
+            provider=model_spec.provider,
             prompt_path=prompt_remote,
             tools=tools,
             session_id=None if session_file else session_id,
@@ -605,26 +644,44 @@ class PiRoleRunner:
         indeterminate_error: IndeterminateInvocationError | None = None
         try:
             role_env = dict(self.env)
-            if no_compaction:
+            role_config_dir = None
+            if (
+                no_compaction
+                or model_spec.base_url is not None
+                or self.stage_model_config.needs_custom_model_config(model_spec)
+            ):
                 # Pi exposes auto-compaction as a settings key, not a CLI
                 # switch.  Use one stable directory for all role invocations
                 # in this runner so the setting is applied without touching a
                 # reviewer worktree.
-                settings_dir = "/external_eval/v5_pi_settings"
-                settings = json.dumps(
-                    {
-                        "defaultProjectTrust": "never",
-                        "telemetry": False,
-                        "compaction": {"enabled": False},
-                    },
-                    separators=(",", ":"),
+                settings_dir = (
+                    "/external_eval/v5_pi_settings/"
+                    f"{role.value}-{self.stage_model_config.digest[:16]}"
                 )
+                settings_payload: dict[str, Any] = {
+                    "defaultProjectTrust": "never",
+                    "telemetry": False,
+                }
+                if no_compaction:
+                    settings_payload["compaction"] = {"enabled": False}
+                settings = json.dumps(settings_payload, separators=(",", ":"))
                 await self.environment.exec(
                     f"mkdir -p {shlex.quote(settings_dir)} && "
                     f"printf '%s' {shlex.quote(settings)} > "
                     f"{shlex.quote(settings_dir + '/settings.json')}"
                 )
-                role_env["PI_CODING_AGENT_DIR"] = settings_dir
+                models_json = self.stage_model_config.models_json(model_spec)
+                if models_json is not None:
+                    models = json.dumps(
+                        models_json, ensure_ascii=False, separators=(",", ":")
+                    )
+                    await self.environment.exec(
+                        f"printf '%s' {shlex.quote(models)} > "
+                        f"{shlex.quote(settings_dir + '/models.json')}"
+                    )
+                role_config_dir = settings_dir
+            if role_config_dir is not None:
+                role_env["PI_CODING_AGENT_DIR"] = role_config_dir
             if invocation_replayed:
                 completion_record = await self._read_completion_record(
                     remote_dir=remote_dir,
@@ -718,7 +775,7 @@ class PiRoleRunner:
         trajectory = pi_jsonl_to_atif(
             transcript,
             instruction=self.redact(prompt),
-            model=self.model,
+            model=model_spec.model,
             agent_version=self.agent_version,
         )
         trajectory_path = host_dir / "trajectory.json"
@@ -1083,6 +1140,38 @@ class ContainerGitWorkspaceManager:
             return host_path.read_bytes()
         finally:
             host_path.unlink(missing_ok=True)
+
+    async def read_frozen_file(
+        self, *, worktree: str, base_commit: str, path: str,
+    ) -> tuple[str, bytes] | None:
+        """Export an observed source from Git, never from the mutable worktree."""
+        tree = await self._checked(
+            f"git ls-tree {shlex.quote(base_commit)} -- {shlex.quote(path)}", cwd=worktree,
+        )
+        entry = (tree.stdout or "").strip()
+        if not entry:
+            return None
+        mode = entry.split()[0]
+        if mode == "120000":
+            link = await self._checked(
+                f"git show {shlex.quote(base_commit + ':' + path)}", cwd=worktree,
+            )
+            path = posixpath.normpath(posixpath.join(posixpath.dirname(path), link.stdout.strip()))
+            target = await self._checked(
+                f"git ls-tree {shlex.quote(base_commit)} -- {shlex.quote(path)}", cwd=worktree,
+            )
+            entry = (target.stdout or "").strip()
+            if not entry or entry.split()[0] == "120000":
+                raise ValueError(f"Unresolved baseline symlink: {path}")
+            mode = entry.split()[0]
+        if not mode.startswith("100"):
+            return None
+        remote = f"{self.INPUT_ROOT}/ft-source-{sha256_json([base_commit, path])}.txt"
+        await self._checked(
+            f"git show {shlex.quote(base_commit + ':' + path)} > {shlex.quote(remote)}",
+            cwd=worktree,
+        )
+        return path, await self.read_materialized_file(path=remote)
 
     async def capture_patch(
         self,

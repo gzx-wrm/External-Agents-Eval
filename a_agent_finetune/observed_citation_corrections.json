@@ -1,0 +1,591 @@
+{
+  "aiomonitor-task-snapshots-diff": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 3,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 535,
+        "line_start": 296,
+        "path": "aiomonitor/termui/commands.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 534,
+        "line_start": 296,
+        "path": "aiomonitor/termui/commands.py"
+      },
+      "reason": "The read tool counts a virtual line after the final newline; bind the citation to the actual frozen-file EOF."
+    },
+    {
+      "field": "obligations",
+      "entry_index": 7,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 80,
+        "line_start": 76,
+        "path": "aiomonitor/monitor.py"
+      },
+      "after": null,
+      "reason": "task_by_id returns None for live tasks and does not establish the requested snapshot KeyError contract; retain the explicit task source."
+    }
+  ],
+  "fastapi-implicit-head-options": [
+    {
+      "field": "obligations",
+      "entry_index": 1,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 23,
+        "line_start": 9,
+        "path": "tests/test_operations_signatures.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 22,
+        "line_start": 9,
+        "path": "tests/test_operations_signatures.py"
+      },
+      "reason": "The read tool counts a virtual line after the final newline; bind the citation to the actual frozen-file EOF."
+    },
+    {
+      "field": "preservation_obligations",
+      "entry_index": 0,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 1576,
+        "line_start": 1573,
+        "path": "fastapi/routing.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 1757,
+        "line_start": 1726,
+        "path": "fastapi/routing.py"
+      },
+      "reason": "原 include_router 签名未包含所述设置合并和优先级；改为已见响应、response_class、标签、依赖、回调和 ID 生成器的合并逻辑。"
+    },
+    {
+      "field": "preservation_obligations",
+      "entry_index": 0,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "line_end": 1335,
+        "line_start": 1332,
+        "path": "fastapi/routing.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 1792,
+        "line_start": 1758,
+        "path": "fastapi/routing.py"
+      },
+      "reason": "原 add_api_route 签名不能支持所述路由配置传播；改为 include_router 中实际转发设置和 strict_content_type 优先级的调用。"
+    },
+    {
+      "field": "preservation_obligations",
+      "entry_index": 2,
+      "source_index": 0,
+      "before": {
+        "kind": "repository",
+        "line_end": 267,
+        "line_start": 263,
+        "path": "fastapi/openapi/utils.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 481,
+        "line_start": 283,
+        "path": "fastapi/openapi/utils.py"
+      },
+      "reason": "原 get_openapi_path 签名未展示 method keys 或 operation 内容；改为已见按方法生成 operation、参数/响应并写入 path 的实际实现。"
+    }
+  ],
+  "tengo-callable-instance-isolation": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 3,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "line_end": 668,
+        "line_start": 643,
+        "path": "script_test.go"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 667,
+        "line_start": 643,
+        "path": "script_test.go"
+      },
+      "reason": "The read tool counts a virtual line after the final newline; bind the citation to the actual frozen-file EOF."
+    }
+  ],
+  "vulture-persistent-analysis-cache": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 4,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 684,
+        "line_start": 664,
+        "path": "vulture/core.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 683,
+        "line_start": 664,
+        "path": "vulture/core.py"
+      },
+      "reason": "The read tool counts a virtual line after the final newline; bind the citation to the actual frozen-file EOF."
+    }
+  ],
+  "yaegi-go-embed-directives": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 1,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "line_end": 7,
+        "line_start": 3,
+        "path": "_test/vars/second.go"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 6,
+        "line_start": 3,
+        "path": "_test/vars/second.go"
+      },
+      "reason": "The read tool counts a virtual line after the final newline; bind the citation to the actual frozen-file EOF."
+    }
+  ],
+  "adaptix-name-mapping-aliases": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 5,
+      "source_index": 0,
+      "before": {
+        "kind": "repository",
+        "line_end": 85,
+        "line_start": 75,
+        "path": "src/adaptix/_internal/morphing/name_layout/component.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 86,
+        "line_start": 85,
+        "path": "src/adaptix/_internal/morphing/name_layout/component.py"
+      },
+      "reason": "Include the actual _merge_map return new + old, which establishes overlay priority; the original range ended at the function signature."
+    },
+    {
+      "field": "open_questions",
+      "entry_index": 0,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 85,
+        "line_start": 75,
+        "path": "src/adaptix/_internal/morphing/name_layout/component.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 86,
+        "line_start": 85,
+        "path": "src/adaptix/_internal/morphing/name_layout/component.py"
+      },
+      "reason": "Anchor the analogy for alias overlay precedence to the actual map merge implementation."
+    }
+  ],
+  "boa-hierarchical-evaluation-cancellation": [
+    {
+      "field": "obligations",
+      "entry_index": 20,
+      "source_index": 0,
+      "before": {
+        "field": "description",
+        "kind": "task",
+        "quote": "Cancellation is first-wins:\n  the first effective cancellation determines its reason and later attempts cannot replace it.\n  `cancel` and `cancel_with_reason` must report whether the call performed the first effective cancellation."
+      },
+      "after": {
+        "field": "description",
+        "kind": "task",
+        "quote": "Cancellation is first-wins:\n   the first effective cancellation determines its reason and later attempts cannot replace it.\n   `cancel` and `cancel_with_reason` must report whether the call performed the first effective cancellation."
+      },
+      "reason": "Use the exact task indentation (three spaces rather than two); obligation wording is unchanged."
+    }
+  ],
+  "expr-try-catch-errors": [
+    {
+      "field": "obligations",
+      "entry_index": 0,
+      "source_index": 3,
+      "before": {
+        "kind": "repository",
+        "path": "vm/vm.go",
+        "line_start": 351,
+        "line_end": 358
+      },
+      "after": {
+        "kind": "repository",
+        "path": "vm/vm.go",
+        "line_start": 368,
+        "line_end": 408
+      },
+      "reason": "The original range describes string suffix operations, not host function calls. OpCall performs reflective host calls and panics on returned errors."
+    },
+    {
+      "field": "obligations",
+      "entry_index": 0,
+      "source_index": 4,
+      "before": {
+        "kind": "repository",
+        "path": "vm/vm.go",
+        "line_start": 388,
+        "line_end": 395
+      },
+      "after": {
+        "kind": "repository",
+        "path": "vm/vm.go",
+        "line_start": 411,
+        "line_end": 452
+      },
+      "reason": "Point to specialized OpCall0/1/2/3/N host-call error propagation instead of argument preparation."
+    }
+  ],
+  "fastapi-deprecation-response-headers": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 4,
+      "source_index": 0,
+      "before": {
+        "kind": "repository",
+        "line_end": 1003,
+        "line_start": 999,
+        "path": "fastapi/routing.py"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 998,
+        "line_start": 994,
+        "path": "fastapi/routing.py"
+      },
+      "reason": "APIRoute.matches records child_scope[\"route\"] here; the original range contains the APIRouter class docstring."
+    }
+  ],
+  "numba-stencil-boundary-modes": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 9,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 145,
+        "line_start": 145,
+        "path": "numba/__init__.py"
+      },
+      "after": null,
+      "reason": "The declared baseline pins llvmlite >=0.47 while the environment overwrote this line to 0.46. The modified line is excluded from frozen evidence; the existing explicit task quote is the source for the dependency pin."
+    }
+  ],
+  "meriyah-explicit-resource-declarations": [
+    {
+      "field": "obligations",
+      "entry_index": 3,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "path": "src/token.ts",
+        "line_start": 148,
+        "line_end": 157
+      },
+      "after": {
+        "kind": "repository",
+        "path": "src/token.ts",
+        "line_start": 163,
+        "line_end": 170
+      },
+      "reason": "OfKeyword carries IsIdentifier and IsInOrOf at line 170; original lines 148-157 describe unrelated reserved keywords."
+    },
+    {
+      "field": "obligations",
+      "entry_index": 3,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 7699,
+        "line_end": 7722
+      },
+      "after": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 1847,
+        "line_end": 2027
+      },
+      "reason": "Use the actually observed parseForStatement implementation; the original unseen range describes decorators."
+    },
+    {
+      "field": "open_questions",
+      "entry_index": 5,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "path": "src/token.ts",
+        "line_start": 148,
+        "line_end": 157
+      },
+      "after": {
+        "kind": "repository",
+        "path": "src/token.ts",
+        "line_start": 163,
+        "line_end": 170
+      },
+      "reason": "OfKeyword carries IsIdentifier and IsInOrOf at line 170; original lines 148-157 describe unrelated reserved keywords."
+    },
+    {
+      "field": "open_questions",
+      "entry_index": 5,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 7699,
+        "line_end": 7722
+      },
+      "after": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 1847,
+        "line_end": 2027
+      },
+      "reason": "Use the actually observed parseForStatement implementation; the original unseen range describes decorators."
+    },
+    {
+      "field": "open_questions",
+      "entry_index": 4,
+      "source_index": 3,
+      "before": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 3334,
+        "line_end": 3401
+      },
+      "after": {
+        "kind": "repository",
+        "path": "src/estree.ts",
+        "line_start": 658,
+        "line_end": 666
+      },
+      "reason": "The visible MemberExpression/Pattern public AST contract provides computed-member context; the original unseen parser range describes await/function-body parsing. This supports the analogy in the question, not a resolved using precedence rule."
+    },
+    {
+      "field": "preservation_obligations",
+      "entry_index": 3,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 1877,
+        "line_start": 1846,
+        "path": "src/parser.ts"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 1825,
+        "line_start": 1800,
+        "path": "src/parser.ts"
+      },
+      "reason": "原1846–1877为 for 解析入口，未包含所述初始化器限制；改为已见 parseVariableDeclaration 中 for-in/for-of 初始化器和缺少初始化器检查。"
+    },
+    {
+      "field": "obligations",
+      "entry_index": 13,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 980,
+        "line_end": 1022
+      },
+      "after": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 1043,
+        "line_end": 1111
+      },
+      "reason": "原980–1022为 do-while 解析；改为已见 parseSwitchStatement，包含 SwitchStatement 作用域及 case 内的 statement-list 分派。"
+    },
+    {
+      "field": "open_questions",
+      "entry_index": 4,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 1434,
+        "line_end": 1469
+      },
+      "after": {
+        "kind": "repository",
+        "path": "src/parser.ts",
+        "line_start": 1526,
+        "line_end": 1565
+      },
+      "reason": "原1434–1469为 static block 解析；改为已见 let 标识符/声明分支，含 IsPatternStart 与 let 作为标识符的分派。这里只提供相似语法的歧义上下文。"
+    }
+  ],
+  "sql-formatter-bigquery-pipe-formatting": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 1,
+      "source_index": 0,
+      "before": {
+        "kind": "repository",
+        "line_end": 191,
+        "line_start": 191,
+        "path": "src/languages/bigquery/bigquery.formatter.ts"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 192,
+        "line_start": 192,
+        "path": "src/languages/bigquery/bigquery.formatter.ts"
+      },
+      "reason": "The operator array including | and || is at line 192; line 191 configures line comments."
+    }
+  ],
+  "obsidian-linter-auto-table-of-contents": [
+    {
+      "field": "obligations",
+      "entry_index": 25,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "path": "src/utils/regex.ts",
+        "line_start": 11,
+        "line_end": 13
+      },
+      "after": {
+        "kind": "repository",
+        "path": "src/utils/regex.ts",
+        "line_start": 13,
+        "line_end": 15
+      },
+      "reason": "Point directly to both wikiLinkRegex and genericLinkRegex, removing the unrelated code-block regex from this link-format context citation."
+    },
+    {
+      "field": "obligations",
+      "entry_index": 26,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "path": "src/utils/strings.ts",
+        "line_start": 288,
+        "line_end": 313
+      },
+      "after": null,
+      "reason": "原288–313处理 blockquote 留白，不能建立空 TOC 的间隔契约；移除不相关仓库引用，保留任务留白要求作为 advisory 推导依据。"
+    }
+  ],
+  "yjs-map-conflict-detection": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 1,
+      "source_index": 4,
+      "before": {
+        "kind": "repository",
+        "line_end": 443,
+        "line_start": 443,
+        "path": "src/structs/Item.js"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 553,
+        "line_start": 443,
+        "path": "src/structs/Item.js"
+      },
+      "reason": "原引用只含 integrate 方法签名；定位到教师已读到的冲突排序、父映射赋值、覆盖删除和变更登记实现，支持基线写入兼容性。"
+    },
+    {
+      "field": "preservation_obligations",
+      "entry_index": 2,
+      "source_index": 2,
+      "before": {
+        "kind": "repository",
+        "line_end": 469,
+        "line_start": 469,
+        "path": "src/utils/encoding.js"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 470,
+        "line_start": 459,
+        "path": "src/utils/encoding.js"
+      },
+      "reason": "原行469仅为注释结束符；实际公开 applyUpdate 契约和函数位于459–470。"
+    },
+    {
+      "field": "preservation_obligations",
+      "entry_index": 3,
+      "source_index": 0,
+      "before": {
+        "kind": "repository",
+        "line_end": 499,
+        "line_start": 499,
+        "path": "src/utils/Transaction.js"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 623,
+        "line_start": 500,
+        "path": "src/utils/Transaction.js"
+      },
+      "reason": "原行499仅为注释结束符；定位到已见 cleanupTransactions 的观察者、afterTransaction、合并和收尾事件实现。"
+    },
+    {
+      "field": "preservation_obligations",
+      "entry_index": 3,
+      "source_index": 1,
+      "before": {
+        "kind": "repository",
+        "line_end": 635,
+        "line_start": 635,
+        "path": "src/utils/Transaction.js"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 671,
+        "line_start": 635,
+        "path": "src/utils/Transaction.js"
+      },
+      "reason": "原引用只有 transact 签名；展开到已见嵌套事务、beforeTransaction 和 finally 清理逻辑。"
+    }
+  ],
+  "optique-conditional-option-dependencies": [
+    {
+      "field": "preservation_obligations",
+      "entry_index": 2,
+      "source_index": 0,
+      "before": {
+        "kind": "repository",
+        "line_end": 465,
+        "line_start": 458,
+        "path": "packages/core/src/modifiers.ts"
+      },
+      "after": {
+        "kind": "repository",
+        "line_end": 468,
+        "line_start": 461,
+        "path": "packages/core/src/modifiers.ts"
+      },
+      "reason": "原458–465不包含 usage 字段；公开 withDefault 返回包装器的 usage 转发位于467行，改为461–468。"
+    }
+  ]
+}

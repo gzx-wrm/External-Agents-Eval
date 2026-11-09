@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 DEEPSWE_BUILDER_ENV = "EXTERNAL_AGENTS_EVAL_DEEPSWE_BUILDER"
+CUSTOM_MODEL_PORT = 3000
 _REGISTRY_CONTEXT_MARKERS = (
     "registry",
     "docker.io",
@@ -19,6 +20,214 @@ _REGISTRY_CONTEXT_MARKERS = (
     "ghcr.io",
     "quay.io",
 )
+
+
+def _patch_proxy_apt_transport(dockerfile_path: Path) -> None:
+    """Make Pier's Ubuntu proxy bootstrap work behind HTTPS-intercepting networks."""
+    dockerfile = dockerfile_path.read_text()
+    bootstrap_config = "/etc/apt/apt.conf.d/99-external-eval-bootstrap"
+    if bootstrap_config in dockerfile:
+        return
+    apt_anchor = "RUN apt-get update && "
+    if apt_anchor not in dockerfile:
+        raise RuntimeError(
+            "Pier egress-proxy Dockerfile no longer exposes the apt bootstrap"
+        )
+    cleanup_anchor = " && rm -rf /var/lib/apt/lists/*"
+    if cleanup_anchor not in dockerfile:
+        raise RuntimeError(
+            "Pier egress-proxy Dockerfile no longer cleans the apt package lists"
+        )
+    dockerfile = dockerfile.replace(
+        apt_anchor,
+        "RUN find /etc/apt -type f "
+        "\\( -name '*.list' -o -name '*.sources' \\) "
+        "-exec sed -i 's#http://#https://#g' "
+        "{} + && printf '%s\\n' 'Acquire::https::Verify-Peer \"false\";' "
+        f"> {bootstrap_config} "
+        "&& apt-get update && ",
+        1,
+    )
+    dockerfile_path.write_text(
+        dockerfile.replace(
+            cleanup_anchor,
+            f" && rm -f {bootstrap_config}"
+            + cleanup_anchor,
+            1,
+        )
+    )
+
+
+def _patch_agent_apt_transport(dockerfile_path: Path) -> None:
+    """Patch Pier's JSON-form agent install step with the apt HTTPS bootstrap."""
+    bootstrap_config = "/etc/apt/apt.conf.d/99-external-eval-bootstrap"
+    lines = dockerfile_path.read_text().splitlines()
+    changed = False
+    for index, line in enumerate(lines):
+        if not line.startswith("RUN ["):
+            continue
+        command = json.loads(line.removeprefix("RUN "))
+        if not isinstance(command, list) or not command:
+            continue
+        script = command[-1]
+        if not isinstance(script, str) or "  apt-get update\n" not in script:
+            continue
+        if bootstrap_config in script:
+            continue
+        cleanup_anchor = "  rm -rf /var/lib/apt/lists/*"
+        if cleanup_anchor not in script:
+            raise RuntimeError(
+                "Pier agent Dockerfile no longer cleans the apt package lists"
+            )
+        script = script.replace(
+            "  apt-get update\n",
+            "  find /etc/apt -type f \\( -name '*.list' -o -name '*.sources' \\) "
+            "-exec sed -i 's#http://#https://#g' "
+            "{} +\n"
+            "  printf '%s\\n' 'Acquire::https::Verify-Peer \"false\";' "
+            f"> {bootstrap_config}\n"
+            "  apt-get update\n",
+            1,
+        )
+        command[-1] = script.replace(
+            cleanup_anchor,
+            f"  rm -f {bootstrap_config}\n" + cleanup_anchor,
+            1,
+        )
+        lines[index] = "RUN " + json.dumps(command)
+        changed = True
+    if not changed and bootstrap_config not in "\n".join(lines):
+        raise RuntimeError("Pier agent Dockerfile no longer exposes the apt bootstrap")
+    dockerfile_path.write_text("\n".join(lines) + "\n")
+
+
+def install_custom_endpoint_egress_patch() -> None:
+    """Allow the configured OpenAI-compatible HTTP endpoint through Squid.
+
+    Pier's stock proxy template permits only ports 80/443 and uses ``dstdomain``
+    for the allowlist. Numeric ``base_url`` hosts are not matched reliably by
+    that ACL, and the V6 reviewer endpoint uses HTTP on port 3000. Rewrite the
+    template at process startup so the existing domain allowlist also supports
+    literal IPv4/IPv6 destinations on that port.
+    """
+    from pier.environments import agent_setup
+
+    original = agent_setup.squid_bootstrap_command
+    if not getattr(original, "_external_eval_custom_endpoint_patch", False):
+
+        def patched() -> str:
+            script = original()
+            safe_ports = "acl Safe_ports port 80 443"
+            if safe_ports not in script:
+                raise RuntimeError("Pier Squid template no longer exposes Safe_ports")
+            script = script.replace(
+                safe_ports,
+                f"{safe_ports} {CUSTOM_MODEL_PORT}",
+                1,
+            )
+            marker = "acl allowed_domains dstdomain \"/tmp/allowed_domains.txt\""
+            if marker not in script:
+                raise RuntimeError(
+                    "Pier Squid template no longer exposes the domain allowlist"
+                )
+            ip_setup = r'''# Squid's dstdomain ACL does not match numeric destination hosts reliably.
+# Keep domain suffixes on dstdomain and authorize literal IPs with dst.
+grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(/[0-9]+)?$|^[0-9A-Fa-f:]+(/[0-9]+)?$' \
+  /tmp/allowed_domains.txt > /tmp/allowed_ips.txt || true
+grep -v -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(/[0-9]+)?$|^[0-9A-Fa-f:]+(/[0-9]+)?$' \
+  /tmp/allowed_domains.txt > /tmp/allowed_domains.filtered || true
+mv /tmp/allowed_domains.filtered /tmp/allowed_domains.txt
+# url_regex is a compatibility path for literal IP HTTP URLs.
+sed -E 's/\./\\./g; s#^#^https?://#; s#$#(:[0-9]+)?(/|$)#' \
+  /tmp/allowed_ips.txt > /tmp/allowed_ip_urls.txt
+'''
+            insertion_anchor = "mv /tmp/allowed_domains.filtered /tmp/allowed_domains.txt\n"
+            if insertion_anchor in script:
+                raise RuntimeError("Pier Squid template already contains an IP ACL patch")
+            script = script.replace(
+                "htpasswd -bc /tmp/squid.passwd agent \"$PROXY_TOKEN\"\n\n",
+                "htpasswd -bc /tmp/squid.passwd agent \"$PROXY_TOKEN\"\n\n"
+                + ip_setup
+                + "\n",
+                1,
+            )
+            script = script.replace(
+                marker,
+                marker
+                + '\nacl allowed_ips dst "/tmp/allowed_ips.txt"'
+                + '\nacl allowed_ip_urls url_regex -i "/tmp/allowed_ip_urls.txt"',
+                1,
+            )
+            access_anchor = "http_access allow authenticated allowed_domains\n"
+            if access_anchor not in script:
+                raise RuntimeError("Pier Squid template no longer exposes access rules")
+            script = script.replace(
+                access_anchor,
+                access_anchor
+                + "http_access allow authenticated allowed_ips\n"
+                + "http_access allow authenticated allowed_ip_urls\n",
+                1,
+            )
+            return script
+
+        patched._external_eval_custom_endpoint_patch = True
+        agent_setup.squid_bootstrap_command = patched
+
+    original_writer = agent_setup.write_docker_proxy_compose
+    if not getattr(original_writer, "_external_eval_apt_transport_patch", False):
+
+        def write_docker_proxy_compose(
+            *,
+            path: Path,
+            proxy_dir: Path,
+            allowlist: Any,
+            token: str,
+        ) -> Path:
+            result = original_writer(
+                path=path,
+                proxy_dir=proxy_dir,
+                allowlist=allowlist,
+                token=token,
+            )
+            _patch_proxy_apt_transport(proxy_dir / "Dockerfile")
+            return result
+
+        write_docker_proxy_compose._external_eval_apt_transport_patch = True
+        agent_setup.write_docker_proxy_compose = write_docker_proxy_compose
+
+    original_agent_writer = agent_setup.write_agent_dockerfile
+    if not getattr(original_agent_writer, "_external_eval_apt_transport_patch", False):
+
+        def write_agent_dockerfile(
+            *,
+            build_dir: Path,
+            source_environment_dir: Path,
+            prebuilt_image_name: str | None,
+            install: Any,
+            user: str | int | None,
+        ) -> Path:
+            result = original_agent_writer(
+                build_dir=build_dir,
+                source_environment_dir=source_environment_dir,
+                prebuilt_image_name=prebuilt_image_name,
+                install=install,
+                user=user,
+            )
+            _patch_agent_apt_transport(result)
+            return result
+
+        write_agent_dockerfile._external_eval_apt_transport_patch = True
+        agent_setup.write_agent_dockerfile = write_agent_dockerfile
+
+    # ``pier.environments.docker.docker`` imports the writer by name before
+    # this compatibility layer runs, so update that bound module reference as
+    # well as the defining module.
+    from pier.environments.docker import docker as docker_environment
+
+    docker_environment.write_docker_proxy_compose = (
+        agent_setup.write_docker_proxy_compose
+    )
+    docker_environment.write_agent_dockerfile = agent_setup.write_agent_dockerfile
 
 
 def install_docker_builder_patch(docker_environment_class: type[Any]) -> None:
@@ -505,6 +714,7 @@ def main() -> None:
     from pier.trial.execution import TrialExecution
     from pier.trial.trial import Trial
 
+    install_custom_endpoint_egress_patch()
     install_docker_builder_patch(DockerEnvironment)
     install_docker_image_cleanup_patch(Trial)
     install_environment_start_retry_patch(TrialExecution)

@@ -1,0 +1,25 @@
+{
+  "providers": {
+    "openai": {
+      "baseUrl": "http://host.docker.internal:3000/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "qwen35-9b",
+          "name": "Qwen3.5-9B native E smoke",
+          "api": "openai-completions",
+          "reasoning": false,
+          "input": ["text"],
+          "contextWindow": 172032,
+          "maxTokens": 8192,
+          "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+          "compat": {
+            "supportsDeveloperRole": false,
+            "supportsStore": false,
+            "maxTokensField": "max_tokens"
+          }
+        }
+      ]
+    }
+  }
+}

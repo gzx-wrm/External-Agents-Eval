@@ -1,0 +1,14 @@
+{
+  "pinned_tokenizer_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "tasks_checked": 30,
+  "initial_prompt_ids_match_original": true,
+  "initial_prompt_tokens_min": 2227,
+  "initial_prompt_tokens_max": 2921,
+  "xml_tool_arguments_parsed": true,
+  "real_tokenizer_tool_suffix_valid": true,
+  "sampled_tokens_preserved": true,
+  "observation_tokens_masked": true,
+  "synthetic_tool_to_ledger_reward": 1.0,
+  "model_weights_loaded": false,
+  "model_inference_performed": false
+}

@@ -5,6 +5,13 @@ from dataclasses import dataclass
 V5_PROMPT_VERSION = "v5-5"
 V5_CONTROLLER_VERSION = "v5-4"
 
+# Shared runtime limits. Reviewer prompts state these numbers, so the archive and
+# Mini adapters read the same constants instead of repeating literals.
+V5_ROLE_STEP_LIMIT = 250
+REVIEW_MATERIAL_MAX_FILES = 128
+REVIEW_MATERIAL_MAX_FILE_BYTES = 16 * 1024 * 1024
+REVIEW_MATERIAL_MAX_TOTAL_BYTES = 32 * 1024 * 1024
+
 
 @dataclass(frozen=True)
 class V5Config:

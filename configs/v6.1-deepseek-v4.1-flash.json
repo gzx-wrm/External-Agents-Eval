@@ -1,0 +1,31 @@
+{
+  "default": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "base_url": "https://api.deepseek.com/v1",
+    "model_metadata": {
+      "name": "DeepSeek V4.1 Flash",
+      "api": "openai-completions",
+      "reasoning": true,
+      "input": ["text"],
+      "contextWindow": 1000000,
+      "maxTokens": 384000,
+      "thinkingLevelMap": {
+        "off": null,
+        "minimal": null,
+        "low": null,
+        "medium": null,
+        "high": "high",
+        "xhigh": null,
+        "max": null
+      },
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "maxTokensField": "max_tokens",
+        "supportsLongCacheRetention": false,
+        "requiresReasoningContentOnAssistantMessages": true
+      }
+    }
+  }
+}

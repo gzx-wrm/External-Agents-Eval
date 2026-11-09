@@ -1,0 +1,9 @@
+training_chat_template.jinja and response_schema.json are taken from Hugging Face TRL v1.15.0:
+https://github.com/huggingface/trl/blob/v1.15.0/trl/chat_templates/qwen3_5_nothink_training.jinja
+https://github.com/huggingface/trl/blob/v1.15.0/trl/chat_template_utils.py (qwen3_5_schema)
+
+Copyright 2020-2026 The HuggingFace Team. All rights reserved.
+Licensed under the Apache License, Version 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
+
+The frozen schema in spec_output_schema.json is the project's raw SpecOutput protocol.

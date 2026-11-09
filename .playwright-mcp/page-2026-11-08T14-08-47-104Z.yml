@@ -1,0 +1,20 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - heading "错误" [level=1] [ref=e3]
+    - heading "您所请求的网址（URL）无法获取" [level=2] [ref=e4]
+  - separator [ref=e5]
+  - generic [ref=e6]:
+    - paragraph [ref=e7]:
+      - text: 当尝试取回该 URL 时遇到下面的错误：
+      - link "http://127.0.0.1:8765/index.html" [ref=e8] [cursor=pointer]:
+        - /url: http://127.0.0.1:8765/index.html
+    - blockquote [ref=e9]:
+      - paragraph [ref=e10]: 访问被拒绝。
+    - paragraph [ref=e11]: Access control configuration prevents your request from being allowed at this time. Please contact your service provider if you feel this is incorrect.
+    - paragraph [ref=e12]:
+      - text: 缓存服务器的管理员
+      - link "webmaster" [ref=e13] [cursor=pointer]:
+        - /url: mailto:webmaster
+      - text: .
+  - separator [ref=e14]
+  - paragraph [ref=e16]: 已由 claude1026-private-proxy (squid) 生成 Sun, 08 Nov 2026 14:08:47 GMT

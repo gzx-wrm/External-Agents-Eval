@@ -12,3 +12,5 @@ results/
 results_*/
 /docs/
 /.trash/
+/a_agent_finetune/data/
+/a_agent_finetune/g1/data/

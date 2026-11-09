@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,10 @@ from pier.utils.trajectory_metrics import populate_context_from_final_metrics
 from pier.utils.trajectory_utils import format_trajectory_json
 
 from external_agents_eval.agents.config import DEFAULT_MODEL
+from external_agents_eval.agents.pier.pi_model_config import (
+    PiModelSpec,
+    PiStageModelConfig,
+)
 
 
 class DeepSWEPierAgent(BaseAgent):
@@ -28,32 +33,86 @@ class DeepSWEPierAgent(BaseAgent):
         logs_dir: Path,
         model_name: str | None = None,
         extra_env: dict[str, str] | None = None,
+        stage_model_config: Any = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
         super().__init__(logs_dir, model_name, *args, **kwargs)
         self.extra_env = dict(extra_env or {})
+        self.stage_model_config = PiStageModelConfig.from_value(
+            stage_model_config,
+            fallback_model=model_name or DEFAULT_MODEL,
+        )
 
     @property
     def runtime_model(self) -> str:
-        model = self.model_name or DEFAULT_MODEL
-        if model.startswith("deepseek/"):
-            return model.split("/", 1)[1]
-        return model
+        return self.model_spec_for_role("solver").model
+
+    @property
+    def runtime_provider(self) -> str:
+        return self.model_spec_for_role("solver").provider
+
+    def model_spec_for_role(self, role: Any) -> PiModelSpec:
+        return self.stage_model_config.for_role(role)
 
     def network_allowlist(self) -> NetworkAllowlist:
-        return NetworkAllowlist(domains=["api.deepseek.com"])
+        return NetworkAllowlist(domains=list(self.stage_model_config.domains()))
 
     def agent_env(self, environment: BaseEnvironment) -> dict[str, str]:
-        api_key = self.extra_env.get("DEEPSEEK_API_KEY")
-        if not api_key:
-            raise RuntimeError("DEEPSEEK_API_KEY was not passed to the Pier agent")
-        return environment.agent_process_env({"DEEPSEEK_API_KEY": api_key}) or {}
+        values: dict[str, str] = {}
+        missing: list[str] = []
+        for env_key in self.stage_model_config.required_env_keys():
+            value = self.extra_env.get(env_key)
+            if value:
+                values[env_key] = value
+            else:
+                missing.append(env_key)
+        if missing:
+            raise RuntimeError(
+                "The following provider API keys were not passed to the Pier agent: "
+                + ", ".join(missing)
+            )
+        return environment.agent_process_env(values) or {}
 
     def redact(self, text: str | None) -> str:
         value = "" if text is None else str(text)
-        secret = self.extra_env.get("DEEPSEEK_API_KEY")
-        return value.replace(secret, "[REDACTED]") if secret else value
+        for env_key in self.stage_model_config.required_env_keys():
+            secret = self.extra_env.get(env_key)
+            if secret:
+                value = value.replace(secret, "[REDACTED]")
+        return value
+
+    async def prepare_pi_config(
+        self,
+        environment: BaseEnvironment,
+        model_spec: PiModelSpec,
+        *,
+        config_key: str,
+        config_dir: str = "/external_eval/pi_config",
+    ) -> str:
+        """Write a provider override without ever writing API credentials."""
+        models_json = self.stage_model_config.models_json(model_spec)
+        if models_json is None:
+            return config_dir
+        if not config_key.replace("_", "").replace("-", "").isalnum():
+            raise ValueError(f"Unsafe Pi model config key: {config_key}")
+        target_dir = (
+            "/external_eval/pi_model_configs/"
+            f"{config_key}-{self.stage_model_config.digest[:16]}"
+        )
+        payload = json.dumps(models_json, ensure_ascii=False, separators=(",", ":"))
+        settings = json.dumps(
+            {"defaultProjectTrust": "never", "telemetry": False},
+            separators=(",", ":"),
+        )
+        await self.checked_exec(
+            environment,
+            f"mkdir -p {shlex.quote(target_dir)} && "
+            f"printf '%s' {shlex.quote(payload)} > {shlex.quote(target_dir + '/models.json')} && "
+            f"printf '%s' {shlex.quote(settings)} > "
+            f"{shlex.quote(target_dir + '/settings.json')}"
+        )
+        return target_dir
 
     def redact_payload(self, value: Any) -> Any:
         if isinstance(value, str):

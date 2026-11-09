@@ -1,0 +1,31 @@
+{
+  "experiment": "G1",
+  "pool": "Original 30 tasks sampled from DeepSWE random60 with seed 20260922",
+  "train": [
+    "adaptix-name-mapping-aliases", "anko-typed-variable-bindings",
+    "arktype-json-schema-refs-dependencies", "fastapi-deprecation-response-headers",
+    "langchain-request-coalescing", "mobly-grouped-test-barriers",
+    "optique-conditional-option-dependencies", "scriggo-method-declarations",
+    "sql-formatter-bigquery-pipe-formatting", "termenv-preserve-ansi-resets",
+    "tomlkit-toml-table-converters", "valibot-recursive-schema-composition",
+    "yjs-map-conflict-detection"
+  ],
+  "validation": [
+    "vulture-persistent-analysis-cache", "boa-hierarchical-evaluation-cancellation",
+    "obsidian-linter-link-format-conversion"
+  ],
+  "test": [
+    "abs-stepped-slices", "aiomonitor-task-snapshots-diff", "cliffy-config-file-parsing",
+    "expr-try-catch-errors", "fastapi-implicit-head-options", "gql-incremental-graphql-delivery",
+    "meriyah-explicit-resource-declarations", "numba-stencil-boundary-modes",
+    "obsidian-linter-auto-table-of-contents", "sqlite-utils-safe-import-checkpoints",
+    "tengo-callable-instance-isolation", "testem-per-launcher-reports",
+    "ts-pattern-match-each", "yaegi-go-embed-directives"
+  ],
+  "notes": [
+    "G1 is independent: original base initialization; no previous adapter, teacher trajectory, or teacher Ledger.",
+    "Reuse the existing task-level 13/3/14 partition for comparability; it is a development partition, not a new blind test.",
+    "FastAPI train/test tasks share repository and base commit; Obsidian validation/test tasks share a repository.",
+    "Validation selects checkpoints; test tasks are never sampled for training."
+  ]
+}

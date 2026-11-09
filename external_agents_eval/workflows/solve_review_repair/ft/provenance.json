@@ -1,0 +1,10 @@
+{
+  "description": "Unmodified FT protocol snapshots used by the V6.2 orchestrator.",
+  "sources": {
+    "a_agent_finetune/build_f_observed.py": "8325f35ff806aabab367c6654561a7515757cefd776452bfa656dea456a932de",
+    "a_agent_finetune/build_f_compact.py": "056ee762710260cfc5b0a6db0444e5f7f430d9da5efc761d6c5943b34b26128a",
+    "a_agent_finetune/runs/ft-ds41-fixed-evidence30-thinking-20261020-w3-r1/f_validation_snapshot.py": "bbfcd6fd67a6d4b9f1f6cbbdaf4639d4a09eea27812c56509c8b842d2f3e4222",
+    "a_agent_finetune/f_prompt_v4.txt": "2ee6fa677de8a458d7c32ee4234c27e9bf49fe07be4b860bc04cc4dc28532d3a",
+    "a_agent_finetune/spec_output_schema.json": "68f559c1b02a9c3713d6f3080073bca9fb2736ab6fd8c1d51eec581e515f0f01"
+  }
+}
